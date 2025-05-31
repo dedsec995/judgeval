@@ -1067,7 +1067,7 @@ class Tracer:
 
         rprint(f"[bold]{label}:[/bold] {msg}")
     
-    def identify(self, identifier: str, track_state: bool = False, track_attributes: Optional[List[str]] = None):
+    def identify(self, identifier: str, track_state: bool = False, track_attributes: Optional[List[str]] = None, field_mappings: Optional[Dict[str, str]] = None):
         """
         Class decorator that associates a class with a custom identifier.
         
@@ -1091,7 +1091,8 @@ class Tracer:
             self.class_identifiers[class_name] = {
                 "identifier": identifier,
                 "track_state": track_state,
-                "track_attributes": track_attributes
+                "track_attributes": track_attributes,
+                "field_mappings": field_mappings or {}
             }
             return cls
         
@@ -1105,13 +1106,20 @@ class Tracer:
             instance: The instance to capture the state of
         """
         track_attributes = class_config.get('track_attributes')
+        field_mappings = class_config.get('field_mappings')
         
         if track_attributes:
-            # Track only specified attributes
-            return {attr: getattr(instance, attr, None) for attr in track_attributes}
+        
+            state = {attr: getattr(instance, attr, None) for attr in track_attributes}
         else:
-            # Track all non-private attributes
-            return {k: v for k, v in instance.__dict__.items() if not k.startswith('_')}
+
+            state = {k: v for k, v in instance.__dict__.items() if not k.startswith('_')}
+
+        if field_mappings:
+            state['field_mappings'] = field_mappings
+
+        return state
+        
         
     def _get_instance_state_if_tracked(self, args):
         """
