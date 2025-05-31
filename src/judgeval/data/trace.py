@@ -36,7 +36,7 @@ class TraceSpan(BaseModel):
     state_after: Optional[Dict[str, Any]] = None
 
     def model_dump(self, **kwargs):
-        result = {
+        return {
             "span_id": self.span_id,
             "trace_id": self.trace_id,
             "depth": self.depth,
