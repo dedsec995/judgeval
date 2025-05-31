@@ -507,6 +507,18 @@ class TraceClient:
             span = self.span_id_to_span[current_span_id]
             span.agent_name = agent_name
 
+    def record_state_before(self, state: dict):
+        current_span_id = current_span_var.get()
+        if current_span_id:
+            span = self.span_id_to_span[current_span_id]
+            span.state_before = state
+            
+    def record_state_after(self, state: dict):
+        current_span_id = current_span_var.get()
+        if current_span_id:
+            span = self.span_id_to_span[current_span_id]
+            span.state_after = state
+
     async def _update_coroutine(self, span: TraceSpan, coroutine: Any, field: str):
         """Helper method to update the output of a trace entry once the coroutine completes"""
         try:
@@ -1055,7 +1067,7 @@ class Tracer:
 
         rprint(f"[bold]{label}:[/bold] {msg}")
     
-    def identify(self, identifier: str):
+    def identify(self, identifier: str, track_state: bool = False, track_attributes: Optional[List[str]] = None):
         """
         Class decorator that associates a class with a custom identifier.
         
@@ -1076,11 +1088,45 @@ class Tracer:
         """
         def decorator(cls):
             class_name = cls.__name__
-            self.class_identifiers[class_name] = identifier
+            self.class_identifiers[class_name] = {
+                "identifier": identifier,
+                "track_state": track_state,
+                "track_attributes": track_attributes
+            }
             return cls
         
         return decorator
     
+    def _capture_instance_state(self, instance, class_config):
+        """
+        Capture the state of an instance based on class configuration
+
+        Args:
+            instance: The instance to capture the state of
+        """
+        track_attributes = class_config.get('track_attributes')
+        
+        if track_attributes:
+            # Track only specified attributes
+            return {attr: getattr(instance, attr, None) for attr in track_attributes}
+        else:
+            # Track all non-private attributes
+            return {k: v for k, v in instance.__dict__.items() if not k.startswith('_')}
+        
+    def _get_instance_state_if_tracked(self, args):
+        """
+        Extract instance state if the instance should be tracked.
+        
+        Returns the captured state dict if tracking is enabled, None otherwise.
+        """
+        if args and hasattr(args[0], '__class__'):
+            instance = args[0]
+            class_name = instance.__class__.__name__
+            if (class_name in self.class_identifiers and 
+                isinstance(self.class_identifiers[class_name], dict) and
+                self.class_identifiers[class_name].get('track_state', False)):
+                return self._capture_instance_state(instance, self.class_identifiers[class_name])
+        
     def observe(self, func=None, *, name=None, span_type: SpanType = "span", project_name: str = None, overwrite: bool = False, deep_tracing: bool = None):
         """
         Decorator to trace function execution with detailed entry/exit information.
@@ -1158,12 +1204,22 @@ class Tracer:
                             span.record_input(inputs)
                             if agent_name:
                                 span.record_agent_name(agent_name)
+
+                            # Capture state before execution
+                            state_before = self._get_instance_state_if_tracked(args)
+                            if state_before:
+                                span.record_state_before(state_before)
                             
                             if use_deep_tracing:
                                 with _DeepTracer():
                                     result = await func(*args, **kwargs)
                             else:
                                 result = await func(*args, **kwargs)
+
+                            # Capture state after execution  
+                            state_after = self._get_instance_state_if_tracked(args)
+                            if state_after:
+                                span.record_state_after(state_after)
                                                         
                             # Record output
                             span.record_output(result)
@@ -1182,11 +1238,21 @@ class Tracer:
                         if agent_name:
                             span.record_agent_name(agent_name)
 
+                        # Capture state before execution
+                        state_before = self._get_instance_state_if_tracked(args)
+                        if state_before:
+                            span.record_state_before(state_before)
+                            
                         if use_deep_tracing:
                             with _DeepTracer():
                                 result = await func(*args, **kwargs)
                         else:
                             result = await func(*args, **kwargs)
+
+                        # Capture state after execution  
+                        state_after = self._get_instance_state_if_tracked(args)
+                        if state_after:
+                            span.record_state_after(state_after)
                             
                         span.record_output(result)
                     return result
@@ -1237,12 +1303,22 @@ class Tracer:
                             span.record_input(inputs)
                             if agent_name:
                                 span.record_agent_name(agent_name)
+                            # Capture state before execution
+                            state_before = self._get_instance_state_if_tracked(args)
+                            if state_before:
+                                span.record_state_before(state_before)
+                                    
                             if use_deep_tracing:
                                 with _DeepTracer():
                                     result = func(*args, **kwargs)
                             else:
                                 result = func(*args, **kwargs)
-                            
+
+                             # Capture state after execution
+                            state_after = self._get_instance_state_if_tracked(args)
+                            if state_after:
+                                span.record_state_after(state_after)
+                                                        
                             # Record output
                             span.record_output(result)
                         return result
@@ -1261,11 +1337,21 @@ class Tracer:
                         if agent_name:
                             span.record_agent_name(agent_name)
 
+                        # Capture state before execution
+                        state_before = self._get_instance_state_if_tracked(args)
+                        if state_before:
+                            span.record_state_before(state_before)
+
                         if use_deep_tracing:
                             with _DeepTracer():
                                 result = func(*args, **kwargs)
                         else:
                             result = func(*args, **kwargs)
+                            
+                        # Capture state after execution
+                        state_after = self._get_instance_state_if_tracked(args)
+                        if state_after:
+                            span.record_state_after(state_after)
                             
                         span.record_output(result)
                     return result
@@ -1961,10 +2047,12 @@ def get_instance_prefixed_name(instance, class_name, class_identifiers):
     Otherwise, returns None.
     """
     if class_name in class_identifiers:
-        attr = class_identifiers[class_name]
+        class_config = class_identifiers[class_name]
+        attr = class_config['identifier']
+            
         if hasattr(instance, attr):
             instance_name = getattr(instance, attr)
             return instance_name
         else:
-            raise Exception(f"Attribute {class_identifiers[class_name]} does not exist for {class_name}. Check your identify() decorator.")
+            raise Exception(f"Attribute {attr} does not exist for {class_name}. Check your identify() decorator.")
     return None
