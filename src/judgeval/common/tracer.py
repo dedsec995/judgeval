@@ -307,7 +307,7 @@ class TraceClient:
         tracer: Optional["Tracer"],
         trace_id: Optional[str] = None,
         name: str = "default",
-        project_name: str = "default_project",
+        project_name: str = None,
         overwrite: bool = False,
         rules: Optional[List[Rule]] = None,
         enable_monitoring: bool = True,
@@ -317,7 +317,7 @@ class TraceClient:
     ):
         self.name = name
         self.trace_id = trace_id or str(uuid.uuid4())
-        self.project_name = project_name
+        self.project_name = project_name or str(uuid.uuid4())
         self.overwrite = overwrite
         self.tracer = tracer
         self.rules = rules or []
@@ -561,7 +561,15 @@ class TraceClient:
             return span # Return the created entry
         # Removed else block - original didn't have one
         return None # Return None if no span_id found
-
+    
+    def record_error(self, error: Any):
+        current_span_id = current_span_var.get()
+        if current_span_id:
+            span = self.span_id_to_span[current_span_id]
+            span.error = error
+            return span
+        return None
+    
     def add_span(self, span: TraceSpan):
         """Add a trace span to this trace context"""
         self.trace_spans.append(span)
@@ -613,7 +621,17 @@ class TraceClient:
     def delete(self):
         return self.trace_manager_client.delete_trace(self.trace_id)
     
+def _capture_exception_for_trace(current_trace: Optional['TraceClient'], exc_info: Tuple[Optional[type], Optional[BaseException], Optional[types.TracebackType]]):
+    if not current_trace:
+        return
 
+    exc_type, exc_value, exc_traceback_obj = exc_info
+    formatted_exception = {
+        "type": exc_type.__name__ if exc_type else "UnknownExceptionType",
+        "message": str(exc_value) if exc_value else "No exception message",
+        "traceback": traceback.format_tb(exc_traceback_obj) if exc_traceback_obj else []
+    }
+    current_trace.record_error(formatted_exception)
 class _DeepTracer:
     _instance: Optional["_DeepTracer"] = None
     _lock: threading.Lock = threading.Lock()
@@ -855,16 +873,11 @@ class _DeepTracer:
                 current_span_var.reset(frame.f_locals["_judgment_span_token"])
 
         elif event == "exception":
-            exc_type, exc_value, exc_traceback = arg
-            formatted_exception = {
-                "type": exc_type.__name__,
-                "message": str(exc_value),
-                "traceback": traceback.format_tb(exc_traceback)
-            }
-            current_trace = current_trace_var.get()
-            current_trace.record_output({
-                "error": formatted_exception
-            })
+            exc_type = arg[0]
+            if issubclass(exc_type, (StopIteration, StopAsyncIteration, GeneratorExit)):
+                return
+            _capture_exception_for_trace(current_trace, arg)
+            
         
         return continuation_func
     
@@ -916,7 +929,7 @@ class Tracer:
     def __init__(
         self, 
         api_key: str = os.getenv("JUDGMENT_API_KEY"), 
-        project_name: str = "default_project",
+        project_name: str = None,
         rules: Optional[List[Rule]] = None,  # Added rules parameter
         organization_id: str = os.getenv("JUDGMENT_ORG_ID"),
         enable_monitoring: bool = os.getenv("JUDGMENT_MONITORING", "true").lower() == "true",
@@ -944,7 +957,7 @@ class Tracer:
                 raise ValueError("S3 bucket name must be provided when use_s3 is True")
             
             self.api_key: str = api_key
-            self.project_name: str = project_name
+            self.project_name: str = project_name or str(uuid.uuid4())
             self.organization_id: str = organization_id
             self._current_trace: Optional[str] = None
             self._active_trace_client: Optional[TraceClient] = None # Add active trace client attribute
@@ -1248,8 +1261,12 @@ class Tracer:
                                 with _DeepTracer():
                                     result = await func(*args, **kwargs)
                             else:
-                                result = await func(*args, **kwargs)
-
+                                try:
+                                    result = await func(*args, **kwargs)
+                                except Exception as e:
+                                    _capture_exception_for_trace(current_trace, sys.exc_info())
+                                    raise e
+                                    
                             # Capture state after execution  
                             self._conditionally_capture_and_record_state(span, args, is_before=False)
                                                         
@@ -1277,8 +1294,12 @@ class Tracer:
                             with _DeepTracer():
                                 result = await func(*args, **kwargs)
                         else:
-                            result = await func(*args, **kwargs)
-
+                            try:
+                                result = await func(*args, **kwargs)
+                            except Exception as e:
+                                _capture_exception_for_trace(current_trace, sys.exc_info())
+                                raise e
+                                
                         # Capture state after execution  
                         self._conditionally_capture_and_record_state(span, args, is_before=False)
                             
@@ -1338,12 +1359,16 @@ class Tracer:
                                 with _DeepTracer():
                                     result = func(*args, **kwargs)
                             else:
-                                result = func(*args, **kwargs)
-
-                             # Capture state after execution
+                                try:
+                                    result = func(*args, **kwargs)
+                                except Exception as e:
+                                    _capture_exception_for_trace(current_trace, sys.exc_info())
+                                    raise e
+                                    
+                            # Capture state after execution
                             self._conditionally_capture_and_record_state(span, args, is_before=False)
 
-                                                        
+                            
                             # Record output
                             span.record_output(result)
                         return result
@@ -1369,7 +1394,11 @@ class Tracer:
                             with _DeepTracer():
                                 result = func(*args, **kwargs)
                         else:
-                            result = func(*args, **kwargs)
+                            try:
+                                result = func(*args, **kwargs)
+                            except Exception as e:
+                                _capture_exception_for_trace(current_trace, sys.exc_info())
+                                raise e
                             
                         # Capture state after execution
                         self._conditionally_capture_and_record_state(span, args, is_before=False)
