@@ -508,12 +508,22 @@ class TraceClient:
             span.agent_name = agent_name
 
     def record_state_before(self, state: dict):
+        """Records the agent's state before a tool execution on the current span.
+
+        Args:
+            state: A dictionary representing the agent's state.
+        """
         current_span_id = current_span_var.get()
         if current_span_id:
             span = self.span_id_to_span[current_span_id]
             span.state_before = state
             
     def record_state_after(self, state: dict):
+        """Records the agent's state after a tool execution on the current span.
+
+        Args:
+            state: A dictionary representing the agent's state.
+        """
         current_span_id = current_span_var.get()
         if current_span_id:
             span = self.span_id_to_span[current_span_id]
@@ -1069,20 +1079,28 @@ class Tracer:
     
     def identify(self, identifier: str, track_state: bool = False, track_attributes: Optional[List[str]] = None, field_mappings: Optional[Dict[str, str]] = None):
         """
-        Class decorator that associates a class with a custom identifier.
+        Class decorator that associates a class with a custom identifier and enables state tracking.
         
         This decorator creates a mapping between the class name and the provided
         identifier, which can be useful for tagging, grouping, or referencing
-        classes in a standardized way.
+        classes in a standardized way. It also enables automatic state capture
+        for instances of the decorated class when used with tracing.
         
         Args:
-            identifier: The identifier to associate with the decorated class
-            
-        Returns:
-            A decorator function that registers the class with the given identifier
+            identifier: The identifier to associate with the decorated class.
+                    This will be used as the instance name in traces.
+            track_state: Whether to automatically capture the state (attributes) 
+                        of instances before and after function execution. Defaults to False.
+            track_attributes: Optional list of specific attribute names to track.
+                            If None, all non-private attributes (not starting with '_') 
+                            will be tracked when track_state=True.
+            field_mappings: Optional dictionary mapping internal attribute names to 
+                        display names in the captured state. For example:
+                        {"system_prompt": "instructions"} will capture the 
+                        'instructions' attribute as 'system_prompt' in the state.
             
         Example:
-            @tracer.identify(identifier="user_model")
+            @tracer.identify(identifier="user_model", track_state=True, track_attributes=["name", "age"], field_mappings={"system_prompt": "instructions"})
             class User:
                 # Class implementation
         """
@@ -1098,12 +1116,13 @@ class Tracer:
         
         return decorator
     
-    def _capture_instance_state(self, instance, class_config):
+    def _capture_instance_state(self, instance: Any, class_config: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Capture the state of an instance based on class configuration
-
+        Capture the state of an instance based on class configuration.
         Args:
-            instance: The instance to capture the state of
+            instance: The instance to capture the state of.
+            class_config: Configuration dictionary for state capture, 
+                          expected to contain 'track_attributes' and 'field_mappings'.
         """
         track_attributes = class_config.get('track_attributes')
         field_mappings = class_config.get('field_mappings')
@@ -1134,6 +1153,15 @@ class Tracer:
                 isinstance(self.class_identifiers[class_name], dict) and
                 self.class_identifiers[class_name].get('track_state', False)):
                 return self._capture_instance_state(instance, self.class_identifiers[class_name])
+            
+    def _conditionally_capture_and_record_state(self, trace_client_instance: TraceClient, args: tuple, is_before: bool):
+        """Captures instance state if tracked and records it via the trace_client."""
+        state = self._get_instance_state_if_tracked(args)
+        if state:
+            if is_before:
+                trace_client_instance.record_state_before(state)
+            else:
+                trace_client_instance.record_state_after(state)
         
     def observe(self, func=None, *, name=None, span_type: SpanType = "span", project_name: str = None, overwrite: bool = False, deep_tracing: bool = None):
         """
@@ -1214,9 +1242,7 @@ class Tracer:
                                 span.record_agent_name(agent_name)
 
                             # Capture state before execution
-                            state_before = self._get_instance_state_if_tracked(args)
-                            if state_before:
-                                span.record_state_before(state_before)
+                            self._conditionally_capture_and_record_state(span, args, is_before=True)
                             
                             if use_deep_tracing:
                                 with _DeepTracer():
@@ -1225,9 +1251,7 @@ class Tracer:
                                 result = await func(*args, **kwargs)
 
                             # Capture state after execution  
-                            state_after = self._get_instance_state_if_tracked(args)
-                            if state_after:
-                                span.record_state_after(state_after)
+                            self._conditionally_capture_and_record_state(span, args, is_before=False)
                                                         
                             # Record output
                             span.record_output(result)
@@ -1247,9 +1271,7 @@ class Tracer:
                             span.record_agent_name(agent_name)
 
                         # Capture state before execution
-                        state_before = self._get_instance_state_if_tracked(args)
-                        if state_before:
-                            span.record_state_before(state_before)
+                        self._conditionally_capture_and_record_state(span, args, is_before=True)
                             
                         if use_deep_tracing:
                             with _DeepTracer():
@@ -1258,9 +1280,7 @@ class Tracer:
                             result = await func(*args, **kwargs)
 
                         # Capture state after execution  
-                        state_after = self._get_instance_state_if_tracked(args)
-                        if state_after:
-                            span.record_state_after(state_after)
+                        self._conditionally_capture_and_record_state(span, args, is_before=False)
                             
                         span.record_output(result)
                     return result
@@ -1312,9 +1332,7 @@ class Tracer:
                             if agent_name:
                                 span.record_agent_name(agent_name)
                             # Capture state before execution
-                            state_before = self._get_instance_state_if_tracked(args)
-                            if state_before:
-                                span.record_state_before(state_before)
+                            self._conditionally_capture_and_record_state(span, args, is_before=True)
                                     
                             if use_deep_tracing:
                                 with _DeepTracer():
@@ -1323,9 +1341,8 @@ class Tracer:
                                 result = func(*args, **kwargs)
 
                              # Capture state after execution
-                            state_after = self._get_instance_state_if_tracked(args)
-                            if state_after:
-                                span.record_state_after(state_after)
+                            self._conditionally_capture_and_record_state(span, args, is_before=False)
+
                                                         
                             # Record output
                             span.record_output(result)
@@ -1346,9 +1363,7 @@ class Tracer:
                             span.record_agent_name(agent_name)
 
                         # Capture state before execution
-                        state_before = self._get_instance_state_if_tracked(args)
-                        if state_before:
-                            span.record_state_before(state_before)
+                        self._conditionally_capture_and_record_state(span, args, is_before=True)
 
                         if use_deep_tracing:
                             with _DeepTracer():
@@ -1357,9 +1372,7 @@ class Tracer:
                             result = func(*args, **kwargs)
                             
                         # Capture state after execution
-                        state_after = self._get_instance_state_if_tracked(args)
-                        if state_after:
-                            span.record_state_after(state_after)
+                        self._conditionally_capture_and_record_state(span, args, is_before=False)
                             
                         span.record_output(result)
                     return result
