@@ -18,7 +18,7 @@ We're hiring! Join us in our mission to enable self-learning agents by providing
 [![LinkedIn](https://custom-icon-badges.demolab.com/badge/LinkedIn%20-0A66C2?logo=linkedin-white&logoColor=fff)](https://www.linkedin.com/company/judgmentlabs)
 [![Discord](https://img.shields.io/badge/-Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZCnSXYug)
 
-<img src="assets/product_shot.png" alt="Judgment Platform" width="840" />
+<img src="assets/product_shot.png" alt="Judgment Platform" width="800" />
 
 </div>
 
@@ -31,24 +31,24 @@ Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 
 **Multi-agent research system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval provides real-time tracing to see every input/output + environment response of every tool call for debugging. (3) After agent completion, (4) export all interaction data to enable further environment-specific learning and optimization.
 
-<table>
+<table style="width: 100%; max-width: 800px; table-layout: fixed;">
 <tr>
-<td align="center" style="padding: 10px;">
-  <img src="assets/agent.gif" alt="Agent Demo" width="400" />
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/agent.gif" alt="Agent Demo" style="width: 100%; max-width: 350px; height: auto;" />
   <br><strong>🤖 Agents Running</strong>
 </td>
-<td align="center" style="padding: 10px;">
-  <img src="assets/trace.gif" alt="Trace Demo" width="400" />
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/trace.gif" alt="Trace Demo" style="width: 100%; max-width: 350px; height: auto;" />
   <br><strong>📊 Real-time Tracing</strong>
 </td>
 </tr>
 <tr>
-<td align="center" style="padding: 10px;">
-  <img src="assets/document.gif" alt="Agent Completed Demo" width="400" />
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/document.gif" alt="Agent Completed Demo" style="width: 100%; max-width: 350px; height: auto;" />
   <br><strong>✅ Agents Completed Running</strong>
 </td>
-<td align="center" style="padding: 10px;">
-  <img src="assets/data.gif" alt="Data Export Demo" width="400" />
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/data.gif" alt="Data Export Demo" style="width: 100%; max-width: 350px; height: auto;" />
   <br><strong>📤 Exporting Agent Environment Data</strong>
 </td>
 </tr>
