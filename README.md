@@ -5,38 +5,37 @@
 
 <br>
 <div style="font-size: 1.5em;">
-  Open source tracing, evals, and metrics to debug, test, and monitor LLM agents.
+    Enable self-learning agents with traces, evals, and environment data.
 </div>
 
-## [Judgment Cloud](https://app.judgmentlabs.ai/register)  • [Self-Host](https://docs.judgmentlabs.ai/self-hosting/get_started) • [Demo](https://www.youtube.com/watch?v=1S4LixpVbcc) 
+## [Docs](https://docs.judgmentlabs.ai/introduction)  •  [Judgment Cloud](https://app.judgmentlabs.ai/register)  • [Self-Host](https://docs.judgmentlabs.ai/self-hosting/get_started)
 
-[Docs](https://docs.judgmentlabs.ai/introduction) • [Bug Reports](https://github.com/JudgmentLabs/judgeval/issues) • [Changelog](https://docs.judgmentlabs.ai/changelog/2025-04-21)
+ [Demo](https://www.youtube.com/watch?v=1S4LixpVbcc) • [Bug Reports](https://github.com/JudgmentLabs/judgeval/issues) • [Changelog](https://docs.judgmentlabs.ai/changelog/2025-04-21)
 
-We're hiring! Join us in our mission to unleash optimized agents.
+We're hiring! Join us in our mission to enable self-learning agents by providing the data and signals needed for continuous improvement.
 
 [![X](https://img.shields.io/badge/-X/Twitter-000?logo=x&logoColor=white)](https://x.com/JudgmentLabs)
 [![LinkedIn](https://custom-icon-badges.demolab.com/badge/LinkedIn%20-0A66C2?logo=linkedin-white&logoColor=fff)](https://www.linkedin.com/company/judgmentlabs)
 [![Discord](https://img.shields.io/badge/-Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZCnSXYug)
 
-<img src="assets/experiments_pagev2.png" alt="Judgment Platform Experiments Page" width="800" />
+<img src="assets/product_shot.png" alt="Judgment Platform" width="800" />
 
 </div>
 
-
-Judgeval offers **robust open-source tooling** for tracing, evaluating, and monitoring LLM agents. It helps AI teams effectively **test and monitor** agents in development and production, **closing the agent feedback loop**. 
+Judgeval offers **open-source tooling** for tracing, evaluating, and monitoring LLM agents. **Provides comprehensive data from agent-environment interactions** for continuous learning and self-improvement—**enabling the future of autonomous agents**.
 
 Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 > 🎁 Generous monthly [free tier](https://judgmentlabs.ai/pricing) (10k traces, 1k evals) - No credit card required!
 
 ## 🎬 See Judgeval in Action
 
-**Multi-agent research system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval provides real-time tracing to see every input/output + environment response of every tool call for debugging and monitoring. (3) After agents completion, (4) export all environment data for future optimization.
+**Multi-agent research system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval provides real-time tracing to see every input/output + environment response of every tool call for debugging. (3) After agent completion, (4) export all interaction data to enable further environment-specific learning and optimization.
 
 <table>
 <tr>
 <td align="center" style="padding: 10px;">
   <img src="assets/agent.gif" alt="Agent Demo" width="500" />
-  <br><strong>🤖 Agent Running</strong>
+  <br><strong>🤖 Agents Running</strong>
 </td>
 <td align="center" style="padding: 10px;">
   <img src="assets/trace.gif" alt="Trace Demo" width="500" />
@@ -46,7 +45,7 @@ Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 <tr>
 <td align="center" style="padding: 10px;">
   <img src="assets/document.gif" alt="Agent Completed Demo" width="500" />
-  <br><strong>✅ Agent Completed Running</strong>
+  <br><strong>✅ Agents Completed Running</strong>
 </td>
 <td align="center" style="padding: 10px;">
   <img src="assets/data.gif" alt="Data Export Demo" width="500" />
@@ -54,6 +53,7 @@ Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 </td>
 </tr>
 </table>
+
 Judgeval is created and maintained by [Judgment Labs](https://judgmentlabs.ai/).
 
 ## 📋 Table of Contents
