@@ -28,6 +28,32 @@ Judgeval offers **robust open-source tooling** for tracing, evaluating, and moni
 Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 > 🎁 Generous monthly [free tier](https://judgmentlabs.ai/pricing) (10k traces, 1k evals) - No credit card required!
 
+## 🎬 See Judgeval in Action
+
+**Multi-agent research system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval provides real-time tracing to see every input/output + environment response of every tool call for debugging and monitoring. (3) After agents completion, (4) export all environment data for future optimization.
+
+<table>
+<tr>
+<td align="center" style="padding: 10px;">
+  <img src="assets/agent.gif" alt="Agent Demo" width="500" />
+  <br><strong>🤖 Agent Running</strong>
+</td>
+<td align="center" style="padding: 10px;">
+  <img src="assets/trace.gif" alt="Trace Demo" width="500" />
+  <br><strong>📊 Real-time Tracing</strong>
+</td>
+</tr>
+<tr>
+<td align="center" style="padding: 10px;">
+  <img src="assets/document.gif" alt="Agent Completed Demo" width="500" />
+  <br><strong>✅ Agent Completed Running</strong>
+</td>
+<td align="center" style="padding: 10px;">
+  <img src="assets/data.gif" alt="Data Export Demo" width="500" />
+  <br><strong>📤 Exporting Agent Environment Data</strong>
+</td>
+</tr>
+</table>
 Judgeval is created and maintained by [Judgment Labs](https://judgmentlabs.ai/).
 
 ## 📋 Table of Contents
