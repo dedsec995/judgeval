@@ -18,7 +18,7 @@ We're hiring! Join us in our mission to enable self-learning agents by providing
 [![LinkedIn](https://custom-icon-badges.demolab.com/badge/LinkedIn%20-0A66C2?logo=linkedin-white&logoColor=fff)](https://www.linkedin.com/company/judgmentlabs)
 [![Discord](https://img.shields.io/badge/-Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZCnSXYug)
 
-<img src="assets/product_shot.png" alt="Judgment Platform" width="800" />
+<img src="assets/product_shot.png" alt="Judgment Platform" width="840" />
 
 </div>
 
