@@ -34,21 +34,21 @@ Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 <table>
 <tr>
 <td align="center" style="padding: 10px;">
-  <img src="assets/agent.gif" alt="Agent Demo" width="500" />
+  <img src="assets/agent.gif" alt="Agent Demo" width="400" />
   <br><strong>🤖 Agents Running</strong>
 </td>
 <td align="center" style="padding: 10px;">
-  <img src="assets/trace.gif" alt="Trace Demo" width="500" />
+  <img src="assets/trace.gif" alt="Trace Demo" width="400" />
   <br><strong>📊 Real-time Tracing</strong>
 </td>
 </tr>
 <tr>
 <td align="center" style="padding: 10px;">
-  <img src="assets/document.gif" alt="Agent Completed Demo" width="500" />
+  <img src="assets/document.gif" alt="Agent Completed Demo" width="400" />
   <br><strong>✅ Agents Completed Running</strong>
 </td>
 <td align="center" style="padding: 10px;">
-  <img src="assets/data.gif" alt="Data Export Demo" width="500" />
+  <img src="assets/data.gif" alt="Data Export Demo" width="400" />
   <br><strong>📤 Exporting Agent Environment Data</strong>
 </td>
 </tr>
