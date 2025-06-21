@@ -25,11 +25,11 @@ We're hiring! Join us in our mission to enable self-learning agents by providing
 Judgeval offers **open-source tooling** for tracing, evaluating, and monitoring LLM agents. **Provides comprehensive data from agent-environment interactions** for continuous learning and self-improvement—**enabling the future of autonomous agents**.
 
 Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
-> 🎁 Generous monthly [free tier](https://judgmentlabs.ai/pricing) (10k traces, 1k evals) - No credit card required!
+> 🎁 Monthly [free tier](https://judgmentlabs.ai/pricing) (10k traces, 1k evals) - No credit card required!
 
 ## 🎬 See Judgeval in Action
 
-**Multi-agent research system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval provides real-time tracing to see every input/output + environment response of every tool call for debugging. (3) After agent completion, (4) export all interaction data to enable further environment-specific learning and optimization.
+**Multi-agent system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval traces every input/output + environment response across all agent tool calls for debugging. (3) After completion, (4) export all interaction data to enable further environment-specific learning and optimization.
 
 <table style="width: 100%; max-width: 800px; table-layout: fixed;">
 <tr>
@@ -53,8 +53,6 @@ Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 </td>
 </tr>
 </table>
-
-Judgeval is created and maintained by [Judgment Labs](https://judgmentlabs.ai/).
 
 ## 📋 Table of Contents
 - [✨ Features](#-features)
@@ -1420,8 +1418,7 @@ There are many ways to contribute to Judgeval:
 
 ## ⭐ Star Us on GitHub
 
-If you find Judgeval useful, please consider giving us a star on GitHub! Your support helps us grow our community and continue improving the product.
-
+If you find Judgeval useful, please consider giving us a star on GitHub! Your support helps us grow our community and continue improving the repository.
 
 ## ❤️ Contributors
 
@@ -1434,3 +1431,6 @@ There are many ways to contribute to Judgeval:
 <!-- Contributors collage -->
 [![Contributors](https://contributors-img.web.app/image?repo=JudgmentLabs/judgeval)](https://github.com/JudgmentLabs/judgeval/graphs/contributors)
 
+---
+
+Judgeval is created and maintained by [Judgment Labs](https://judgmentlabs.ai/).
