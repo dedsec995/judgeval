@@ -16,7 +16,7 @@ We're hiring! Join us in our mission to enable self-learning agents by providing
 
 [![X](https://img.shields.io/badge/-X/Twitter-000?logo=x&logoColor=white)](https://x.com/JudgmentLabs)
 [![LinkedIn](https://custom-icon-badges.demolab.com/badge/LinkedIn%20-0A66C2?logo=linkedin-white&logoColor=fff)](https://www.linkedin.com/company/judgmentlabs)
-[![Discord](https://img.shields.io/badge/-Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZCnSXYug)
+[![Discord](https://img.shields.io/badge/-Discord-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/SYjXKBMBVp)
 
 <img src="assets/product_shot.png" alt="Judgment Platform" width="800" />
 
@@ -220,7 +220,7 @@ Run Judgment on your own infrastructure: we provide comprehensive self-hosting c
 
 ## 📚 Cookbooks
 
-Have your own? We're happy to feature it if you create a PR or message us on [Discord](https://discord.gg/taAufyhf).
+Have your own? We're happy to feature it if you create a PR or message us on [Discord](https://discord.com/invite/SYjXKBMBVp).
 
 You can access our repo of cookbooks [here](https://github.com/JudgmentLabs/judgment-cookbook). Here are some highlights:
 
