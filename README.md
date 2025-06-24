@@ -1397,7 +1397,7 @@ There are many ways to contribute to Judgeval:
 <!-- Contributors collage -->
 @![Contributors](https://github.com/JudgmentLabs/judgeval/graphs/contributors)
 
-```
+````
 </details>
 
 ## ⭐ Star Us on GitHub
