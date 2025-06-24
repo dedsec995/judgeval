@@ -180,21 +180,6 @@ You should see an evaluation attached to your trace on the Judgment Platform.
 </tr>
 </table>
 
-## 📋 Table of Contents
-- [✨ Features](#-features)
-- [🛠️ Installation](#️-installation)
-- [🏁 Quickstarts](#-quickstarts)
-  - [🛰️ Tracing](#️-tracing)
-  - [📝 Offline Evaluations](#-offline-evaluations)
-  - [📡 Online Evaluations](#-online-evaluations)
-- [🏢 Self-Hosting](#-self-hosting)
-  - [Key Features](#key-features)
-  - [Getting Started](#getting-started)
-- [📚 Cookbooks](#-cookbooks)
-- [💻 Development with Cursor](#-development-with-cursor)
-- [⭐ Star Us on GitHub](#-star-us-on-github)
-- [❤️ Contributors](#️-contributors)
-
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
 
 
@@ -202,10 +187,10 @@ You should see an evaluation attached to your trace on the Judgment Platform.
 
 |  |  |
 |:---|:---:|
-| <h3>🔍 Tracing</h3>Automatic agent tracing integrated with common frameworks (LangGraph, OpenAI, Anthropic): **tracking inputs/outputs, agent tool calls, latency, and cost** at every step.<br><br>Online evals can be applied to traces to measure quality on production data in real-time.<br><br>Export trace data to the Judgment Platform or your own S3 buckets, {Parquet, JSON, YAML} files, or data warehouse.<br><br>**Useful for:**<br>• 🐛 Debugging agent runs <br>• 👤 Tracking user activity <br>• 🔬 Pinpointing performance bottlenecks| <p align="center"><img src="assets/trace_screenshot.png" alt="Tracing visualization" width="1200"/></p> |
+| <h3>🔍 Tracing</h3>Automatic agent tracing integrated with common frameworks (LangGraph, OpenAI, Anthropic): **tracking inputs/outputs, agent tool calls, latency, and cost** at every step.<br><br>Online evals can be applied to traces to measure quality on production data in real-time. Export data per individual trace for detailed analysis.<br><br>**Useful for:**<br>• 🐛 Debugging agent runs <br>• 📋 Collecting agent environment data <br>• 🔬 Pinpointing performance bottlenecks| <p align="center"><img src="assets/trace_screenshot.png" alt="Tracing visualization" width="1200"/></p> |
 | <h3>🧪 Evals</h3>Evals are the key to regression testing for agents. Judgeval provides 15+ research-backed metrics including tool call accuracy, hallucinations, instruction adherence, and retrieval context recall.<br><br>Judgeval supports LLM-as-a-judge, manual labeling, and custom evaluators that connect with our metric-tracking infrastructure. <br><br>**Useful for:**<br>• ⚠️ Unit-testing <br>• 🔬 Experimental prompt testing<br>• 🛡️ Online guardrails | <p align="center"><img src="assets/experiments_page.png" alt="Evaluation metrics" width="800"/></p> |
 | <h3>📡 Monitoring</h3>Track all your agent metrics in production. **Catch production regressions early.**<br><br>Configure alerts to trigger automated actions when metric thresholds are exceeded (add agent trace to review queue/dataset, Slack notification, etc.).<br><br> **Useful for:** <br>• 📉 Identifying degradation early <br>• 📈 Visualizing performance trends across agent versions and time | <p align="center"><img src="assets/monitoring_screenshot.png" alt="Monitoring Dashboard" width="1200"/></p> |
-| <h3>📊 Datasets</h3>Export trace data or import external testcases to datasets for scaled unit testing and structured experiments. Move datasets to/from Parquet, S3, etc. <br><br>Run evals on datasets as unit tests or to A/B test different agent configurations. <br><br> **Useful for:**<br>• 🗃️ Filtered agent runtime data for fine tuning<br>• 🔄 Scaled analysis for A/B tests | <p align="center"><img src="assets/datasets_preview_screenshot.png" alt="Dataset management" width="1200"/></p> |
+| <h3>📊 Datasets</h3>Export comprehensive agent-environment interaction data or import external testcases to datasets for scaled analysis and optimization. Move datasets to/from Parquet, S3, etc. <br><br>Run evals on datasets as unit tests or to A/B test different agent configurations, enabling continuous learning from production interactions. <br><br> **Useful for:**<br>• 🗃️ Agent environment interaction data for optimization<br>• 🔄 Scaled analysis for A/B tests | <p align="center"><img src="assets/datasets_preview_screenshot.png" alt="Dataset management" width="1200"/></p> |
 
 ## 🏢 Self-Hosting
 
@@ -1237,10 +1222,10 @@ Judgeval is created and maintained by @Judgment Labs.
 
 |  |  |
 |:---|:---:|
-| <h3>🔍 Tracing</h3>Automatic agent tracing integrated with common frameworks (LangGraph, OpenAI, Anthropic): **tracking inputs/outputs, latency, and cost** at every step.<br><br>Online evals can be applied to traces to measure quality on production data in real-time.<br><br>Export trace data to the Judgment Platform or your own S3 buckets, {Parquet, JSON, YAML} files, or data warehouse.<br><br>**Useful for:**<br>• 🐛 Debugging agent runs <br>• 👤 Tracking user activity <br>• 🔬 Pinpointing performance bottlenecks| <p align="center"><img src="assets/trace_screenshot.png" alt="Tracing visualization" width="1200"/></p> |
+| <h3>🔍 Tracing</h3>Automatic agent tracing integrated with common frameworks (LangGraph, OpenAI, Anthropic): **tracking inputs/outputs, agent tool calls, latency, and cost** at every step.<br><br>Online evals can be applied to traces to measure quality on production data in real-time.<br><br>**Useful for:**<br>• 🐛 Debugging agent runs <br>• 📋 Collecting agent environment data <br>• 🔬 Pinpointing performance bottlenecks| <p align="center"><img src="assets/trace_screenshot.png" alt="Tracing visualization" width="1200"/></p> |
 | <h3>🧪 Evals</h3>15+ research-backed metrics including tool call accuracy, hallucinations, instruction adherence, and retrieval context recall.<br><br>Build custom evaluators that connect with our metric-tracking infrastructure. <br><br>**Useful for:**<br>• ⚠️ Unit-testing <br>• 🔬 Experimental prompt testing<br>• 🛡️ Online guardrails <br><br> | <p align="center"><img src="assets/experiments_page.png" alt="Evaluation metrics" width="800"/></p> |
 | <h3>📡 Monitoring</h3>Real-time performance tracking of your agents in production environments. **Track all your metrics in one place.**<br><br>Set up **Slack/email alerts** for critical metrics and receive notifications when thresholds are exceeded.<br><br> **Useful for:** <br>•📉 Identifying degradation early <br>•📈 Visualizing performance trends across versions and time | <p align="center"><img src="assets/monitoring_screenshot.png" alt="Monitoring Dashboard" width="1200"/></p> |
-| <h3>📊 Datasets</h3>Export trace data or import external testcases to datasets hosted on Judgment's Platform. Move datasets to/from Parquet, S3, etc. <br><br>Run evals on datasets as unit tests or to A/B test different agent configurations. <br><br> **Useful for:**<br>• 🔄 Scaled analysis for A/B tests <br>• 🗃️ Filtered collections of agent runtime data| <p align="center"><img src="assets/datasets_preview_screenshot.png" alt="Dataset management" width="1200"/></p> |
+| <h3>📊 Datasets</h3>Export trace data or import external testcases to datasets for scaled unit testing and structured experiments. Move datasets to/from Parquet, S3, etc. <br><br>Run evals on datasets as unit tests or to A/B test different agent configurations. <br><br> **Useful for:**<br>• 🗃️ Filtered agent runtime data for fine tuning<br>• 🔄 Scaled analysis for A/B tests | <p align="center"><img src="assets/datasets_preview_screenshot.png" alt="Dataset management" width="1200"/></p> |
 | <h3>💡 Insights</h3>Cluster on your data to reveal common use cases and failure modes.<br><br>Trace failures to their exact source with Judgment's Osiris agent, which localizes errors to specific components for precise fixes.<br><br> **Useful for:**<br>•🔮 Surfacing common inputs that lead to error<br>•🤖 Investigating agent/user behavior for optimization <br>| <p align="center"><img src="assets/dataset_clustering_screenshot_dm.png" alt="Insights dashboard" width="1200"/></p> |
 
 ## 🛠️ Installation
@@ -1412,8 +1397,7 @@ There are many ways to contribute to Judgeval:
 <!-- Contributors collage -->
 @![Contributors](https://github.com/JudgmentLabs/judgeval/graphs/contributors)
 
-````
-
+```
 </details>
 
 ## ⭐ Star Us on GitHub
