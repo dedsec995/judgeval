@@ -8,7 +8,7 @@
     Enable self-learning agents with traces, evals, and environment data.
 </div>
 
-## [Docs](https://docs.judgmentlabs.ai/introduction)  •  [Judgment Cloud](https://app.judgmentlabs.ai/register)  • [Self-Host](https://docs.judgmentlabs.ai/self-hosting/get_started)
+## [Docs](https://docs.judgmentlabs.ai/)  •  [Judgment Cloud](https://app.judgmentlabs.ai/register)  • [Self-Host](https://docs.judgmentlabs.ai/self-hosting/get_started)
 
  [Demo](https://www.youtube.com/watch?v=1S4LixpVbcc) • [Bug Reports](https://github.com/JudgmentLabs/judgeval/issues) • [Changelog](https://docs.judgmentlabs.ai/changelog/2025-04-21)
 
@@ -16,7 +16,7 @@ We're hiring! Join us in our mission to enable self-learning agents by providing
 
 [![X](https://img.shields.io/badge/-X/Twitter-000?logo=x&logoColor=white)](https://x.com/JudgmentLabs)
 [![LinkedIn](https://custom-icon-badges.demolab.com/badge/LinkedIn%20-0A66C2?logo=linkedin-white&logoColor=fff)](https://www.linkedin.com/company/judgmentlabs)
-[![Discord](https://img.shields.io/badge/-Discord-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/SYjXKBMBVp)
+[![Discord](https://img.shields.io/badge/-Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/tGVFf8UBUY)
 
 <img src="assets/product_shot.png" alt="Judgment Platform" width="800" />
 
@@ -35,7 +35,7 @@ Get started with Judgeval by installing our SDK using pip:
 pip install judgeval
 ```
 
-Ensure you have your `JUDGMENT_API_KEY` and `JUDGMENT_ORG_ID` environment variables set to connect to the [Judgment platform](https://app.judgmentlabs.ai/).
+Ensure you have your `JUDGMENT_API_KEY` and `JUDGMENT_ORG_ID` environment variables set to connect to the [Judgment Platform](https://app.judgmentlabs.ai/).
 
 ```bash
 export JUDGMENT_API_KEY=...
@@ -78,7 +78,7 @@ You'll see your trace exported to the Judgment Platform:
 <p align="center"><img src="assets/trace_demo.png" alt="Judgment Platform Trace Example" width="800" /></p>
 
 
-[Click here](https://docs.judgmentlabs.ai/getting-started#create-your-first-trace) for a more detailed explanation.
+[Click here](https://docs.judgmentlabs.ai/tracing/introduction) for a more detailed explanation.
 
 ### 📝 Offline Evaluations
 
@@ -106,7 +106,7 @@ results = client.run_evaluation(
 print(results)
 ```
 
-[Click here](https://docs.judgmentlabs.ai/getting-started#create-your-first-experiment) for a more detailed explanation.
+[Click here](https://docs.judgmentlabs.ai/evaluation/scorers/introduction) for a more detailed explanation.
 
 ### 📡 Online Evaluations
 
@@ -151,11 +151,11 @@ run_agent("What is the capital of the United States?")
 
 You should see an evaluation attached to your trace on the Judgment Platform.
 
-[Click here](https://docs.judgmentlabs.ai/getting-started#create-your-first-online-evaluation) for a more detailed explanation.
+[Click here](https://docs.judgmentlabs.ai/performance/online_evals) for a more detailed explanation.
 
 ## 🎬 See Judgeval in Action
 
-**Multi-agent system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval traces every input/output + environment response across all agent tool calls for debugging. (3) After completion, (4) export all interaction data to enable further environment-specific learning and optimization.
+**[Multi-Agent System](https://github.com/JudgmentLabs/judgment-cookbook/tree/main/cookbooks/agents/multi-agent) with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval traces every input/output + environment response across all agent tool calls for debugging. (3) After completion, (4) export all interaction data to enable further environment-specific learning and optimization.
 
 <table style="width: 100%; max-width: 800px; table-layout: fixed;">
 <tr>
@@ -223,14 +223,9 @@ Run Judgment on your own infrastructure: we provide comprehensive self-hosting c
 
 ## 📚 Cookbooks
 
-Have your own? We're happy to feature it if you create a PR or message us on [Discord](https://discord.com/invite/SYjXKBMBVp).
+Have your own? We're happy to feature it if you create a PR or message us on [Discord](https://discord.gg/tGVFf8UBUY).
 
-You can access our repo of cookbooks [here](https://github.com/JudgmentLabs/judgment-cookbook). Here are some highlights:
-
-### Sample Agents
-
-#### [Multi-Agent System](https://github.com/JudgmentLabs/judgment-cookbook/tree/main/cookbooks/agents/multi-agent)
-A multi-agent system augmented with tool calls designed for general purpose tasks like financial research and math. Traced and evaluated on Faithfulness (factual adherence to retrieval context).
+You can access our repo of cookbooks [here](https://github.com/JudgmentLabs/judgment-cookbook).
 
 ## 💻 Development with Cursor
 When building agents and LLM workflows in Cursor, providing proper context to your coding assistant helps ensure seamless integration with Judgment. This rule file supplies the essential context your coding assistant needs for successful implementation.
