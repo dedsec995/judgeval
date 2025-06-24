@@ -27,60 +27,6 @@ Judgeval offers **open-source tooling** for tracing, evaluating, and monitoring 
 Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
 > 🎁 Monthly [free tier](https://judgmentlabs.ai/pricing) (10k traces, 1k evals) - No credit card required!
 
-## 🎬 See Judgeval in Action
-
-**Multi-agent system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval traces every input/output + environment response across all agent tool calls for debugging. (3) After completion, (4) export all interaction data to enable further environment-specific learning and optimization.
-
-<table style="width: 100%; max-width: 800px; table-layout: fixed;">
-<tr>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/agent.gif" alt="Agent Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>🤖 Agents Running</strong>
-</td>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/trace.gif" alt="Trace Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>📊 Real-time Tracing</strong>
-</td>
-</tr>
-<tr>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/document.gif" alt="Agent Completed Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>✅ Agents Completed Running</strong>
-</td>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/data.gif" alt="Data Export Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>📤 Exporting Agent Environment Data</strong>
-</td>
-</tr>
-</table>
-
-## 📋 Table of Contents
-- [✨ Features](#-features)
-- [🛠️ Installation](#️-installation)
-- [🏁 Quickstarts](#-quickstarts)
-  - [🛰️ Tracing](#️-tracing)
-  - [📝 Offline Evaluations](#-offline-evaluations)
-  - [📡 Online Evaluations](#-online-evaluations)
-- [🏢 Self-Hosting](#-self-hosting)
-  - [Key Features](#key-features)
-  - [Getting Started](#getting-started)
-- [📚 Cookbooks](#-cookbooks)
-- [💻 Development with Cursor](#-development-with-cursor)
-- [⭐ Star Us on GitHub](#-star-us-on-github)
-- [❤️ Contributors](#️-contributors)
-
-<!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-
-
-## ✨ Features
-
-|  |  |
-|:---|:---:|
-| <h3>🔍 Tracing</h3>Automatic agent tracing integrated with common frameworks (LangGraph, OpenAI, Anthropic): **tracking inputs/outputs, agent tool calls, latency, and cost** at every step.<br><br>Online evals can be applied to traces to measure quality on production data in real-time.<br><br>Export trace data to the Judgment Platform or your own S3 buckets, {Parquet, JSON, YAML} files, or data warehouse.<br><br>**Useful for:**<br>• 🐛 Debugging agent runs <br>• 👤 Tracking user activity <br>• 🔬 Pinpointing performance bottlenecks| <p align="center"><img src="assets/trace_screenshot.png" alt="Tracing visualization" width="1200"/></p> |
-| <h3>🧪 Evals</h3>Evals are the key to regression testing for agents. Judgeval provides 15+ research-backed metrics including tool call accuracy, hallucinations, instruction adherence, and retrieval context recall.<br><br>Judgeval supports LLM-as-a-judge, manual labeling, and custom evaluators that connect with our metric-tracking infrastructure. <br><br>**Useful for:**<br>• ⚠️ Unit-testing <br>• 🔬 Experimental prompt testing<br>• 🛡️ Online guardrails | <p align="center"><img src="assets/experiments_page.png" alt="Evaluation metrics" width="800"/></p> |
-| <h3>📡 Monitoring</h3>Track all your agent metrics in production. **Catch production regressions early.**<br><br>Configure alerts to trigger automated actions when metric thresholds are exceeded (add agent trace to review queue/dataset, Slack notification, etc.).<br><br> **Useful for:** <br>• 📉 Identifying degradation early <br>• 📈 Visualizing performance trends across agent versions and time | <p align="center"><img src="assets/monitoring_screenshot.png" alt="Monitoring Dashboard" width="1200"/></p> |
-| <h3>📊 Datasets</h3>Export trace data or import external testcases to datasets for scaled unit testing and structured experiments. Move datasets to/from Parquet, S3, etc. <br><br>Run evals on datasets as unit tests or to A/B test different agent configurations. <br><br> **Useful for:**<br>• 🗃️ Filtered agent runtime data for fine tuning<br>• 🔄 Scaled analysis for A/B tests | <p align="center"><img src="assets/datasets_preview_screenshot.png" alt="Dataset management" width="1200"/></p> |
-
 ## 🛠️ Installation
 
 Get started with Judgeval by installing our SDK using pip:
@@ -177,32 +123,89 @@ client = wrap(OpenAI())
 judgment = Tracer(project_name="my_project")
 
 @judgment.observe(span_type="tool")
-def my_tool():
-    return "Hello world!"
+def format_question(question: str) -> str:
+    # dummy tool
+    return f"Question : {question}"
 
 @judgment.observe(span_type="function")
-def main():
-    task_input = my_tool()
-    res = client.chat.completions.create(
+def run_agent(prompt: str) -> str:
+    task = format_question(prompt)
+    response = client.chat.completions.create(
         model="gpt-4.1",
-        messages=[{"role": "user", "content": f"{task_input}"}]
-    ).choices[0].message.content
+        messages=[{"role": "user", "content": task}]
+    )
+
+    answer = response.choices[0].message.content
 
     judgment.async_evaluate(
         scorers=[AnswerRelevancyScorer(threshold=0.5)],
-        input=task_input,
-        actual_output=res,
+        input=task,
+        actual_output=answer,
         model="gpt-4.1"
     )
     print("Online evaluation submitted.")
-    return res
-
-main()
+    return answer
+    
+run_agent("What is the capital of the United States?")
 ```
 
 You should see an evaluation attached to your trace on the Judgment Platform.
 
 [Click here](https://docs.judgmentlabs.ai/getting-started#create-your-first-online-evaluation) for a more detailed explanation.
+
+## 🎬 See Judgeval in Action
+
+**Multi-agent system with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval traces every input/output + environment response across all agent tool calls for debugging. (3) After completion, (4) export all interaction data to enable further environment-specific learning and optimization.
+
+<table style="width: 100%; max-width: 800px; table-layout: fixed;">
+<tr>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/agent.gif" alt="Agent Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>🤖 Agents Running</strong>
+</td>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/trace.gif" alt="Trace Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>📊 Real-time Tracing</strong>
+</td>
+</tr>
+<tr>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/document.gif" alt="Agent Completed Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>✅ Agents Completed Running</strong>
+</td>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/data.gif" alt="Data Export Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>📤 Exporting Agent Environment Data</strong>
+</td>
+</tr>
+</table>
+
+## 📋 Table of Contents
+- [✨ Features](#-features)
+- [🛠️ Installation](#️-installation)
+- [🏁 Quickstarts](#-quickstarts)
+  - [🛰️ Tracing](#️-tracing)
+  - [📝 Offline Evaluations](#-offline-evaluations)
+  - [📡 Online Evaluations](#-online-evaluations)
+- [🏢 Self-Hosting](#-self-hosting)
+  - [Key Features](#key-features)
+  - [Getting Started](#getting-started)
+- [📚 Cookbooks](#-cookbooks)
+- [💻 Development with Cursor](#-development-with-cursor)
+- [⭐ Star Us on GitHub](#-star-us-on-github)
+- [❤️ Contributors](#️-contributors)
+
+<!-- Created by https://github.com/ekalinin/github-markdown-toc -->
+
+
+## ✨ Features
+
+|  |  |
+|:---|:---:|
+| <h3>🔍 Tracing</h3>Automatic agent tracing integrated with common frameworks (LangGraph, OpenAI, Anthropic): **tracking inputs/outputs, agent tool calls, latency, and cost** at every step.<br><br>Online evals can be applied to traces to measure quality on production data in real-time.<br><br>Export trace data to the Judgment Platform or your own S3 buckets, {Parquet, JSON, YAML} files, or data warehouse.<br><br>**Useful for:**<br>• 🐛 Debugging agent runs <br>• 👤 Tracking user activity <br>• 🔬 Pinpointing performance bottlenecks| <p align="center"><img src="assets/trace_screenshot.png" alt="Tracing visualization" width="1200"/></p> |
+| <h3>🧪 Evals</h3>Evals are the key to regression testing for agents. Judgeval provides 15+ research-backed metrics including tool call accuracy, hallucinations, instruction adherence, and retrieval context recall.<br><br>Judgeval supports LLM-as-a-judge, manual labeling, and custom evaluators that connect with our metric-tracking infrastructure. <br><br>**Useful for:**<br>• ⚠️ Unit-testing <br>• 🔬 Experimental prompt testing<br>• 🛡️ Online guardrails | <p align="center"><img src="assets/experiments_page.png" alt="Evaluation metrics" width="800"/></p> |
+| <h3>📡 Monitoring</h3>Track all your agent metrics in production. **Catch production regressions early.**<br><br>Configure alerts to trigger automated actions when metric thresholds are exceeded (add agent trace to review queue/dataset, Slack notification, etc.).<br><br> **Useful for:** <br>• 📉 Identifying degradation early <br>• 📈 Visualizing performance trends across agent versions and time | <p align="center"><img src="assets/monitoring_screenshot.png" alt="Monitoring Dashboard" width="1200"/></p> |
+| <h3>📊 Datasets</h3>Export trace data or import external testcases to datasets for scaled unit testing and structured experiments. Move datasets to/from Parquet, S3, etc. <br><br>Run evals on datasets as unit tests or to A/B test different agent configurations. <br><br> **Useful for:**<br>• 🗃️ Filtered agent runtime data for fine tuning<br>• 🔄 Scaled analysis for A/B tests | <p align="center"><img src="assets/datasets_preview_screenshot.png" alt="Dataset management" width="1200"/></p> |
 
 ## 🏢 Self-Hosting
 
