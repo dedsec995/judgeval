@@ -105,26 +105,27 @@ export JUDGMENT_ORG_ID=...
 Create a file named `traces.py` with the following code:
 
 ```python
-from judgeval.common.tracer import Tracer, wrap
+from judgeval.tracer import Tracer, wrap
 from openai import OpenAI
 
-client = wrap(OpenAI())
+client = wrap(OpenAI())  # tracks all LLM calls
 judgment = Tracer(project_name="my_project")
 
 @judgment.observe(span_type="tool")
-def my_tool():
-    return "What's the capital of the U.S.?"
+def format_question(question: str) -> str:
+    # dummy tool
+    return f"Question : {question}"
 
 @judgment.observe(span_type="function")
-def main():
-    task_input = my_tool()
-    res = client.chat.completions.create(
+def run_agent(prompt: str) -> str:
+    task = format_question(prompt)
+    response = client.chat.completions.create(
         model="gpt-4.1",
-        messages=[{"role": "user", "content": f"{task_input}"}]
+        messages=[{"role": "user", "content": task}]
     )
-    return res.choices[0].message.content
-
-main()
+    return response.choices[0].message.content
+    
+run_agent("What is the capital of the United States?")
 ```
 You'll see your trace exported to the Judgment Platform:
 
@@ -1266,26 +1267,27 @@ Track your agent execution with full observability with just a few lines of code
 Create a file named `traces.py` with the following code:
 
 ```python
-from judgeval.common.tracer import Tracer, wrap
+from judgeval.tracer import Tracer, wrap
 from openai import OpenAI
 
-client = wrap(OpenAI())
+client = wrap(OpenAI())  # tracks all LLM calls
 judgment = Tracer(project_name="my_project")
 
 @judgment.observe(span_type="tool")
-def my_tool():
-    return "What's the capital of the U.S.?"
+def format_question(question: str) -> str:
+    # dummy tool
+    return f"Question : {question}"
 
 @judgment.observe(span_type="function")
-def main():
-    task_input = my_tool()
-    res = client.chat.completions.create(
+def run_agent(prompt: str) -> str:
+    task = format_question(prompt)
+    response = client.chat.completions.create(
         model="gpt-4.1",
-        messages=[{"role": "user", "content": f"{task_input}"}]
+        messages=[{"role": "user", "content": task}]
     )
-    return res.choices[0].message.content
+    return response.choices[0].message.content
 
-main()
+run_agent("What is the capital of the United States?")
 ```
 
 @Click here for a more detailed explanation.
