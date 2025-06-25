@@ -24,8 +24,41 @@ We're hiring! Join us in our mission to enable self-learning agents by providing
 
 Judgeval offers **open-source tooling** for tracing, evaluating, and monitoring LLM agents. **Provides comprehensive data from agent-environment interactions** for continuous learning and self-improvement—**enabling the future of autonomous agents**.
 
-Judgeval can be set up **(cloud-hosted or self-hosted) in 5 minutes**!
-> 🎁 Monthly [free tier](https://judgmentlabs.ai/pricing) (10k traces, 1k evals) - No credit card required!
+## 🎬 See Judgeval in Action
+
+**[Multi-Agent System](https://github.com/JudgmentLabs/judgment-cookbook/tree/main/cookbooks/agents/multi-agent) with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval traces every input/output + environment response across all agent tool calls for debugging. (3) After completion, (4) export all interaction data to enable further environment-specific learning and optimization.
+
+<table style="width: 100%; max-width: 800px; table-layout: fixed;">
+<tr>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/agent.gif" alt="Agent Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>🤖 Agents Running</strong>
+</td>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/trace.gif" alt="Trace Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>📊 Real-time Tracing</strong>
+</td>
+</tr>
+<tr>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/document.gif" alt="Agent Completed Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>✅ Agents Completed Running</strong>
+</td>
+<td align="center" style="padding: 8px; width: 50%;">
+  <img src="assets/data.gif" alt="Data Export Demo" style="width: 100%; max-width: 350px; height: auto;" />
+  <br><strong>📤 Exporting Agent Environment Data</strong>
+</td>
+</tr>
+
+</table>
+
+## 📋 Table of Contents
+- [🛠️ Installation](#️-installation)
+- [🏁 Quickstarts](#-quickstarts)
+- [✨ Features](#-features)
+- [🏢 Self-Hosting](#-self-hosting)
+- [📚 Cookbooks](#-cookbooks)
+- [💻 Development with Cursor](#-development-with-cursor)
 
 ## 🛠️ Installation
 
@@ -48,7 +81,7 @@ export JUDGMENT_ORG_ID=...
 
 ### 🛰️ Tracing
 
-Create a file named `traces.py` with the following code:
+Create a file named `agent.py` with the following code:
 
 ```python
 from judgeval.tracer import Tracer, wrap
@@ -80,105 +113,6 @@ You'll see your trace exported to the Judgment Platform:
 
 [Click here](https://docs.judgmentlabs.ai/tracing/introduction) for a more detailed explanation.
 
-### 📝 Offline Evaluations
-
-Create a file named `evaluate.py` with the following code:
-
-```python evaluate.py
-from judgeval import JudgmentClient
-from judgeval.data import Example
-from judgeval.scorers import FaithfulnessScorer
-
-client = JudgmentClient()
-
-example = Example(
-    input="What if these shoes don't fit?",
-    actual_output="We offer a 30-day full refund at no extra cost.",
-    retrieval_context=["All customers are eligible for a 30 day full refund at no extra cost."],
-)
-
-scorer = FaithfulnessScorer(threshold=0.5)  # Hallucination detector
-results = client.run_evaluation(
-    examples=[example],
-    scorers=[scorer],
-    model="gpt-4.1",
-)
-print(results)
-```
-
-[Click here](https://docs.judgmentlabs.ai/evaluation/scorers/introduction) for a more detailed explanation.
-
-### 📡 Online Evaluations
-
-Attach performance monitoring on traces to measure the quality of your systems in production.
-
-Using the same `traces.py` file we created earlier, modify `main` function:
-
-```python
-from judgeval.common.tracer import Tracer, wrap
-from judgeval.scorers import AnswerRelevancyScorer
-from openai import OpenAI
-
-client = wrap(OpenAI())
-judgment = Tracer(project_name="my_project")
-
-@judgment.observe(span_type="tool")
-def format_question(question: str) -> str:
-    # dummy tool
-    return f"Question : {question}"
-
-@judgment.observe(span_type="function")
-def run_agent(prompt: str) -> str:
-    task = format_question(prompt)
-    response = client.chat.completions.create(
-        model="gpt-4.1",
-        messages=[{"role": "user", "content": task}]
-    )
-
-    answer = response.choices[0].message.content
-
-    judgment.async_evaluate(
-        scorers=[AnswerRelevancyScorer(threshold=0.5)],
-        input=task,
-        actual_output=answer,
-        model="gpt-4.1"
-    )
-    print("Online evaluation submitted.")
-    return answer
-    
-run_agent("What is the capital of the United States?")
-```
-
-You should see an evaluation attached to your trace on the Judgment Platform.
-
-[Click here](https://docs.judgmentlabs.ai/performance/online_evals) for a more detailed explanation.
-
-## 🎬 See Judgeval in Action
-
-**[Multi-Agent System](https://github.com/JudgmentLabs/judgment-cookbook/tree/main/cookbooks/agents/multi-agent) with complete observability:** (1) A multi-agent system spawns agents to research topics on the internet. (2) With just **3 lines of code**, Judgeval traces every input/output + environment response across all agent tool calls for debugging. (3) After completion, (4) export all interaction data to enable further environment-specific learning and optimization.
-
-<table style="width: 100%; max-width: 800px; table-layout: fixed;">
-<tr>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/agent.gif" alt="Agent Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>🤖 Agents Running</strong>
-</td>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/trace.gif" alt="Trace Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>📊 Real-time Tracing</strong>
-</td>
-</tr>
-<tr>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/document.gif" alt="Agent Completed Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>✅ Agents Completed Running</strong>
-</td>
-<td align="center" style="padding: 8px; width: 50%;">
-  <img src="assets/data.gif" alt="Data Export Demo" style="width: 100%; max-width: 350px; height: auto;" />
-  <br><strong>📤 Exporting Agent Environment Data</strong>
-</td>
-</tr>
-</table>
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
 
