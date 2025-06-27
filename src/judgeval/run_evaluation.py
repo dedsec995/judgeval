@@ -61,7 +61,6 @@ def execute_api_eval(evaluation_run: EvaluationRun) -> Dict:
     """
 
     try:
-        # submit API request to execute evals
         payload = evaluation_run.model_dump(warnings=False)
         response = requests.post(
             JUDGMENT_EVAL_API_URL,
@@ -1169,15 +1168,6 @@ def assert_test(scoring_results: List[ScoringResult]) -> None:
     if failed_cases:
         error_msg = "The following test cases failed: \n"
         for fail_case in failed_cases:
-            # error_msg += f"\nInput: {fail_case['input']}\n"
-            # error_msg += f"Actual Output: {fail_case['actual_output']}\n"
-            # error_msg += f"Expected Output: {fail_case['expected_output']}\n"
-            # error_msg += f"Context: {fail_case['context']}\n"
-            # error_msg += f"Retrieval Context: {fail_case['retrieval_context']}\n"
-            # error_msg += f"Additional Metadata: {fail_case['additional_metadata']}\n"
-            # error_msg += f"Tools Called: {fail_case['tools_called']}\n"
-            # error_msg += f"Expected Tools: {fail_case['expected_tools']}\n"
-
             for fail_scorer in fail_case["failed_scorers"]:
                 error_msg += (
                     f"\nScorer Name: {fail_scorer.name}\n"

@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Sequence, Union
 from pydantic import BaseModel, field_validator, Field
 
 from judgeval.data import Example, CustomExample
@@ -31,7 +31,7 @@ class EvaluationRun(BaseModel):
     project_name: Optional[str] = Field(default=None, validate_default=True)
     eval_name: Optional[str] = Field(default=None, validate_default=True)
     examples: Union[List[Example], List[CustomExample]]
-    scorers: List[Union[APIJudgmentScorer, JudgevalScorer]]
+    scorers: Sequence[Union[APIJudgmentScorer, JudgevalScorer]]
     model: Optional[Union[str, List[str], JudgevalJudge]] = "gpt-4.1"
     aggregator: Optional[str] = Field(default=None, validate_default=True)
     metadata: Optional[Dict[str, Any]] = None

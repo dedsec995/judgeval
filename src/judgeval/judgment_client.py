@@ -69,13 +69,11 @@ class JudgmentClient(metaclass=SingletonMeta):
         judgment_api_key: Optional[str] = os.getenv("JUDGMENT_API_KEY"),
         organization_id: Optional[str] = os.getenv("JUDGMENT_ORG_ID"),
     ):
-        # Check if API key is None
         if judgment_api_key is None:
             raise ValueError(
                 "JUDGMENT_API_KEY cannot be None. Please provide a valid API key or set the JUDGMENT_API_KEY environment variable."
             )
 
-        # Check if organization ID is None
         if organization_id is None:
             raise ValueError(
                 "JUDGMENT_ORG_ID cannot be None. Please provide a valid organization ID or set the JUDGMENT_ORG_ID environment variable."
@@ -85,10 +83,8 @@ class JudgmentClient(metaclass=SingletonMeta):
         self.organization_id = organization_id
         self.eval_dataset_client = EvalDatasetClient(judgment_api_key, organization_id)
 
-        # Verify API key is valid
         result, response = validate_api_key(judgment_api_key)
         if not result:
-            # May be bad to output their invalid API key...
             raise JudgmentAPIError(f"Issue with passed in Judgment API key: {response}")
         else:
             print("Successfully initialized JudgmentClient!")
@@ -277,8 +273,6 @@ class JudgmentClient(metaclass=SingletonMeta):
         Returns:
             bool: Whether the dataset was successfully uploaded
         """
-        # Set judgment_api_key just in case it was not set
-        dataset.judgment_api_key = self.judgment_api_key
         return self.eval_dataset_client.push(dataset, alias, project_name, overwrite)
 
     def append_example_dataset(

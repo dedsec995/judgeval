@@ -63,7 +63,7 @@ def _initialize_logger(
     log_dir.mkdir(exist_ok=True, parents=True)
     log_file = log_dir / f"{name}.log"
     if log_file.exists():
-        log_file.unlink()  # Delete existing log file
+        log_file.unlink()
 
     if logger is not None:
         return logger

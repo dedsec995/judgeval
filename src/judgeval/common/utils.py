@@ -122,7 +122,7 @@ def validate_api_key(judgment_api_key: str):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {judgment_api_key}",
         },
-        json={},  # Empty body now
+        json={},
         verify=True,
     )
     if response.status_code == 200:

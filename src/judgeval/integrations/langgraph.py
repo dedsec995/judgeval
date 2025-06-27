@@ -19,15 +19,7 @@ from langchain_core.outputs import LLMResult
 from langchain_core.messages.base import BaseMessage
 from langchain_core.documents import Document
 
-# --- Get context vars from tracer module ---
-# Assuming tracer.py defines these and they are accessible
-# If not, redefine them here or adjust import
 
-# from judgeval.common.tracer import current_span_var
-# TODO: Figure out how to handle context variables. Current solution is to keep track of current span id in Tracer class
-
-
-# --- NEW __init__ ---
 class JudgevalCallbackHandler(BaseCallbackHandler):
     """
     LangChain Callback Handler using run_id/parent_run_id for hierarchy.
@@ -40,7 +32,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
     lc_serializable = False
     lc_kwargs: dict = {}
 
-    # --- NEW __init__ ---
     def __init__(self, tracer: Tracer):
         self.tracer = tracer
         # Initialize tracking/logging variables (preserved across resets)
@@ -50,8 +41,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         self.traces: List[Dict[str, Any]] = []
         # Initialize execution state (reset between runs)
         self._reset_state()
-
-    # --- END NEW __init__ ---
 
     def _reset_state(self):
         """Reset only the critical execution state for reuse across multiple executions"""
@@ -75,14 +64,13 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         # - self.traces: List[Dict[str, Any]] = [] # Keep for collecting multiple traces
 
         # Also reset tracking/logging variables
-        self.executed_nodes: List[
-            str
-        ] = []  # These last four members are only appended to and never accessed; can probably be removed but still might be useful for future reference?
+        self.executed_nodes: List[str] = (
+            []
+        )  # These last four members are only appended to and never accessed; can probably be removed but still might be useful for future reference?
         self.executed_tools: List[str] = []
         self.executed_node_tools: List[str] = []
         self.traces: List[Dict[str, Any]] = []
 
-    # --- END NEW __init__ ---
     def reset(self):
         """Public method to manually reset handler execution state for reuse"""
         self._reset_state()
@@ -91,7 +79,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         """Public method to reset ALL handler state including tracking/logging data"""
         self._reset_state()
 
-    # --- MODIFIED _ensure_trace_client ---
     def _ensure_trace_client(
         self, run_id: UUID, parent_run_id: Optional[UUID], event_name: str
     ) -> Optional[TraceClient]:
@@ -404,9 +391,11 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         doc_summary = [
             {
                 "index": i,
-                "page_content": doc.page_content[:100] + "..."
-                if len(doc.page_content) > 100
-                else doc.page_content,
+                "page_content": (
+                    doc.page_content[:100] + "..."
+                    if len(doc.page_content) > 100
+                    else doc.page_content
+                ),
                 "metadata": doc.metadata,
             }
             for i, doc in enumerate(documents)
