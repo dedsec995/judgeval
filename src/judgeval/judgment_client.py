@@ -268,7 +268,6 @@ class JudgmentClient(metaclass=SingletonMeta):
         """
         return self.eval_dataset_client.pull_project_dataset_stats(project_name)
 
-    # Maybe add option where you can pass in the EvaluationRun object and it will pull the eval results from the backend
     def pull_eval(
         self, project_name: str, eval_run_name: str
     ) -> List[Dict[str, Union[str, List[ScoringResult]]]]:
@@ -320,25 +319,6 @@ class JudgmentClient(metaclass=SingletonMeta):
         )
         if response.status_code != codes.ok:
             raise ValueError(f"Error creating project: {response.json()}")
-        return response.json()
-
-    def delete_project(self, project_name: str) -> bool:
-        """
-        Deletes a project from the server. Which also deletes all evaluations and traces associated with the project.
-        """
-        response = requests.delete(
-            JUDGMENT_PROJECT_DELETE_API_URL,
-            json={
-                "project_name": project_name,
-            },
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.judgment_api_key}",
-                "X-Organization-Id": self.organization_id,
-            },
-        )
-        if response.status_code != codes.ok:
-            raise ValueError(f"Error deleting project: {response.json()}")
         return response.json()
 
     def fetch_classifier_scorer(self, slug: str) -> ClassifierScorer:

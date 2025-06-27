@@ -2,13 +2,11 @@
 Tracing system for judgeval that allows for function tracing using decorators.
 """
 
-# Standard library imports
+from __future__ import annotations
 import asyncio
 import functools
 import inspect
 import os
-import site
-import sysconfig
 import threading
 import time
 import traceback
@@ -21,7 +19,7 @@ from contextlib import (
     contextmanager,
     AbstractAsyncContextManager,
     AbstractContextManager,
-)  # Import context manager bases
+)
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -41,8 +39,8 @@ from typing import (
 from rich import print as rprint
 import types
 
-# Third-party imports
 from requests import RequestException
+from judgeval.common.tracer.constants import TRACE_FILEPATH_BLOCKLIST
 from judgeval.utils.requests import requests
 from litellm import cost_per_token as _original_cost_per_token
 from openai import OpenAI, AsyncOpenAI
@@ -50,7 +48,6 @@ from together import Together, AsyncTogether
 from anthropic import Anthropic, AsyncAnthropic
 from google import genai
 
-# Local application/library-specific imports
 from judgeval.constants import (
     JUDGMENT_TRACES_ADD_ANNOTATION_API_URL,
     JUDGMENT_TRACES_SAVE_API_URL,
@@ -68,21 +65,16 @@ from judgeval.evaluation_run import EvaluationRun
 from judgeval.common.utils import ExcInfo, validate_api_key
 from judgeval.common.exceptions import JudgmentAPIError
 
-# Standard library imports needed for the new class
 import concurrent.futures
-from collections.abc import Iterator, AsyncIterator  # Add Iterator and AsyncIterator
+from collections.abc import Iterator, AsyncIterator
 import queue
 import atexit
 
-# Define context variables for tracking the current trace and the current span within a trace
 current_trace_var = contextvars.ContextVar[Optional["TraceClient"]](
     "current_trace", default=None
 )
-current_span_var = contextvars.ContextVar[Optional[str]](
-    "current_span", default=None
-)  # ContextVar for the active span id
+current_span_var = contextvars.ContextVar[Optional[str]]("current_span", default=None)
 
-# Define type aliases for better code readability and maintainability
 ApiClient: TypeAlias = Union[
     OpenAI,
     Together,
@@ -92,26 +84,8 @@ ApiClient: TypeAlias = Union[
     AsyncTogether,
     genai.Client,
     genai.client.AsyncClient,
-]  # Supported API clients
-SpanType = Literal["span", "tool", "llm", "evaluation", "chain"]
-
-
-# Temporary as a POC to have log use the existing annotations feature until log endpoints are ready
-@dataclass
-class TraceAnnotation:
-    """Represents a single annotation for a trace span."""
-
-    span_id: str
-    text: str
-    label: str
-    score: int
-
-    def to_dict(self) -> dict:
-        """Convert the annotation to a dictionary format for storage/transmission."""
-        return {
-            "span_id": self.span_id,
-            "annotation": {"text": self.text, "label": self.label, "score": self.score},
-        }
+]
+SpanType = Union[Literal["span", "tool", "function", "llm", "evaluation", "chain"], str]
 
 
 class TraceManagerClient:
@@ -301,96 +275,6 @@ class TraceManagerClient:
 
         return server_response
 
-    ## TODO: Should have a log endpoint, endpoint should also support batched payloads
-    def save_annotation(self, annotation: TraceAnnotation):
-        json_data = {
-            "span_id": annotation.span_id,
-            "annotation": {
-                "text": annotation.text,
-                "label": annotation.label,
-                "score": annotation.score,
-            },
-        }
-
-        response = requests.post(
-            JUDGMENT_TRACES_ADD_ANNOTATION_API_URL,
-            json=json_data,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.judgment_api_key}",
-                "X-Organization-Id": self.organization_id,
-            },
-            verify=True,
-        )
-
-        if response.status_code != HTTPStatus.OK:
-            raise ValueError(f"Failed to save annotation: {response.text}")
-
-        return response.json()
-
-    def delete_trace(self, trace_id: str):
-        """
-        Delete a trace from the database.
-        """
-        response = requests.delete(
-            JUDGMENT_TRACES_DELETE_API_URL,
-            json={
-                "trace_ids": [trace_id],
-            },
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.judgment_api_key}",
-                "X-Organization-Id": self.organization_id,
-            },
-        )
-
-        if response.status_code != HTTPStatus.OK:
-            raise ValueError(f"Failed to delete trace: {response.text}")
-
-        return response.json()
-
-    def delete_traces(self, trace_ids: List[str]):
-        """
-        Delete a batch of traces from the database.
-        """
-        response = requests.delete(
-            JUDGMENT_TRACES_DELETE_API_URL,
-            json={
-                "trace_ids": trace_ids,
-            },
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.judgment_api_key}",
-                "X-Organization-Id": self.organization_id,
-            },
-        )
-
-        if response.status_code != HTTPStatus.OK:
-            raise ValueError(f"Failed to delete trace: {response.text}")
-
-        return response.json()
-
-    def delete_project(self, project_name: str):
-        """
-        Deletes a project from the server. Which also deletes all evaluations and traces associated with the project.
-        """
-        response = requests.delete(
-            JUDGMENT_PROJECT_DELETE_API_URL,
-            json={
-                "project_name": project_name,
-            },
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.judgment_api_key}",
-                "X-Organization-Id": self.organization_id,
-            },
-        )
-
-        if response.status_code != HTTPStatus.OK:
-            raise ValueError(f"Failed to delete traces: {response.text}")
-
-        return response.json()
-
 
 class TraceClient:
     """Client for managing a single trace context"""
@@ -487,7 +371,6 @@ class TraceClient:
             span_id=span_id,
             trace_id=self.trace_id,
             depth=current_depth,
-            message=name,
             created_at=start_time,
             span_type=span_type,
             parent_span_id=parent_span_id,
@@ -584,17 +467,7 @@ class TraceClient:
                     "Either 'example' or at least one of the individual parameters (input, actual_output, etc.) must be provided"
                 )
 
-        # Check examples before creating evaluation run
-
-        # check_examples([example], scorers)
-
-        # --- Modification: Capture span_id immediately ---
-        # span_id_at_eval_call = current_span_var.get()
-        # print(f"[TraceClient.async_evaluate] Captured span ID at eval call: {span_id_at_eval_call}")
-        # Prioritize explicitly passed span_id, fallback to context var
         span_id_to_use = span_id if span_id is not None else self.get_current_span()
-        # print(f"[TraceClient.async_evaluate] Using span_id: {span_id_to_use}")
-        # --- End Modification ---
 
         # Combine the trace-level rules with any evaluation-specific rules)
         eval_run = EvaluationRun(
@@ -725,9 +598,8 @@ class TraceClient:
             if self.background_span_service and not inspect.iscoroutine(output):
                 self.background_span_service.queue_span(span, span_state="output")
 
-            return span  # Return the created entry
-        # Removed else block - original didn't have one
-        return None  # Return None if no span_id found
+            return span
+        return None
 
     def record_usage(self, usage: TraceUsage):
         current_span_id = self.get_current_span()
@@ -739,9 +611,8 @@ class TraceClient:
             if self.background_span_service:
                 self.background_span_service.queue_span(span, span_state="usage")
 
-            return span  # Return the created entry
-        # Removed else block - original didn't have one
-        return None  # Return None if no span_id found
+            return span
+        return None
 
     def record_error(self, error: Dict[str, Any]):
         current_span_id = self.get_current_span()
@@ -780,13 +651,10 @@ class TraceClient:
         Save the current trace to the database.
         Returns a tuple of (trace_id, server_response) where server_response contains the UI URL and other metadata.
         """
-        # Set start_time if this is the first save
         if self.start_time is None:
             self.start_time = time.time()
 
-        # Calculate total elapsed time
         total_duration = self.get_duration()
-        # Create trace document - Always use standard keys for top-level counts
         trace_data = {
             "trace_id": self.trace_id,
             "name": self.name,
@@ -804,15 +672,10 @@ class TraceClient:
             "customer_id": self.customer_id,
             "tags": self.tags,
         }
-        # --- Log trace data before saving ---
+
         server_response = self.trace_manager_client.save_trace(
             trace_data, offline_mode=self.tracer.offline_mode, final_save=True
         )
-
-        # upload annotations
-        # TODO: batch to the log endpoint
-        for annotation in self.annotations:
-            self.trace_manager_client.save_annotation(annotation)
 
         return self.trace_id, server_response
 
@@ -829,11 +692,8 @@ class TraceClient:
 
         Returns a tuple of (trace_id, server_response) where server_response contains the UI URL and other metadata.
         """
-
-        # Calculate total elapsed time
         total_duration = self.get_duration()
 
-        # Create trace document
         trace_data = {
             "trace_id": self.trace_id,
             "name": self.name,
@@ -850,24 +710,16 @@ class TraceClient:
             "tags": self.tags,
         }
 
-        # If usage check passes, upsert the trace
         server_response = self.trace_manager_client.upsert_trace(
             trace_data,
             offline_mode=self.tracer.offline_mode,
-            show_link=not final_save,  # Show link only on initial save, not final save
-            final_save=final_save,  # Pass final_save to control S3 saving
+            show_link=not final_save,
+            final_save=final_save,
         )
 
-        # Upload annotations
-        # TODO: batch to the log endpoint
-        for annotation in self.annotations:
-            self.trace_manager_client.save_annotation(annotation)
         if self.start_time is None:
             self.start_time = time.time()
         return self.trace_id, server_response
-
-    def delete(self):
-        return self.trace_manager_client.delete_trace(self.trace_id)
 
     def set_metadata(self, **kwargs):
         """
@@ -951,12 +803,12 @@ def _capture_exception_for_trace(
         return
 
     exc_type, exc_value, exc_traceback_obj = exc_info
-    formatted_exception = {
+    formatted_exception: dict[str, Any] = {
         "type": exc_type.__name__ if exc_type else "UnknownExceptionType",
         "message": str(exc_value) if exc_value else "No exception message",
-        "traceback": traceback.format_tb(exc_traceback_obj)
-        if exc_traceback_obj
-        else [],
+        "traceback": (
+            traceback.format_tb(exc_traceback_obj) if exc_traceback_obj else []
+        ),
     }
 
     # This is where we specially handle exceptions that we might want to collect additional data for.
@@ -1024,7 +876,7 @@ class BackgroundSpanService:
         self.organization_id = organization_id
         self.batch_size = batch_size
         self.flush_interval = flush_interval
-        self.num_workers = max(1, num_workers)  # Ensure at least 1 worker
+        self.num_workers = max(1, num_workers)
 
         # Queue for pending spans
         self._span_queue: queue.Queue[Dict[str, Any]] = queue.Queue()
@@ -1056,9 +908,8 @@ class BackgroundSpanService:
         """Main worker loop that processes spans in batches."""
         batch = []
         last_flush_time = time.time()
-        pending_task_count = (
-            0  # Track how many tasks we've taken from queue but not marked done
-        )
+        # Track how many tasks we've taken from queue but not marked done
+        pending_task_count = 0
 
         while not self._shutdown_event.is_set() or self._span_queue.qsize() > 0:
             try:
@@ -1235,7 +1086,7 @@ class BackgroundSpanService:
                     "X-Organization-Id": self.organization_id,
                 },
                 verify=True,
-                timeout=30,  # Add timeout to prevent hanging
+                timeout=30,
             )
 
             if response.status_code != HTTPStatus.OK:
@@ -1284,7 +1135,7 @@ class BackgroundSpanService:
                 "data": {
                     **evaluation_run.model_dump(),
                     "associated_span_id": span_id,
-                    "span_data": span_data.model_dump(),  # Include span data to avoid race conditions
+                    "span_data": span_data.model_dump(),
                     "queued_at": time.time(),
                 },
             }
@@ -1334,7 +1185,6 @@ class _DeepTracer:
         "_deep_profiler_skip_stack", default=[]
     )
     _original_sys_trace: Optional[Callable] = None
-    _original_threading_trace: Optional[Callable] = None
 
     def __init__(self, tracer: "Tracer"):
         self._tracer = tracer
@@ -1390,7 +1240,7 @@ class _DeepTracer:
         return (
             bool(filename)
             and not filename.startswith("<")
-            and not os.path.realpath(filename).startswith(_TRACE_FILEPATH_BLOCKLIST)
+            and not os.path.realpath(filename).startswith(TRACE_FILEPATH_BLOCKLIST)
         )
 
     def _cooperative_sys_trace(self, frame: types.FrameType, event: str, arg: Any):
@@ -1526,7 +1376,6 @@ class _DeepTracer:
                 span_id=span_id,
                 trace_id=current_trace.trace_id,
                 depth=depth,
-                message=qual_name,
                 created_at=start_time,
                 span_type="span",
                 parent_span_id=parent_span_id,
@@ -1597,13 +1446,11 @@ class _DeepTracer:
             if self._refcount == 1:
                 # Store the existing trace functions before setting ours
                 self._original_sys_trace = sys.gettrace()
-                self._original_threading_trace = threading.gettrace()
 
                 self._skip_stack.set([])
                 self._span_stack.set([])
 
                 sys.settrace(self._cooperative_sys_trace)
-                threading.settrace(self._cooperative_threading_trace)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1612,23 +1459,9 @@ class _DeepTracer:
             if self._refcount == 0:
                 # Restore the original trace functions instead of setting to None
                 sys.settrace(self._original_sys_trace)
-                threading.settrace(self._original_threading_trace)
 
                 # Clean up the references
                 self._original_sys_trace = None
-                self._original_threading_trace = None
-
-
-# Below commented out function isn't used anymore?
-
-# def log(self, message: str, level: str = "info"):
-#         """ Log a message with the span context """
-#         current_trace = self._tracer.get_current_trace()
-#         if current_trace:
-#             current_trace.log(message, level)
-#         else:
-#             print(f"[{level}] {message}")
-#         current_trace.record_output({"log": message})
 
 
 class Tracer:
@@ -1686,9 +1519,9 @@ class Tracer:
         self.traces: List[Trace] = []
         self.enable_monitoring: bool = enable_monitoring
         self.enable_evaluations: bool = enable_evaluations
-        self.class_identifiers: Dict[
-            str, str
-        ] = {}  # Dictionary to store class identifiers
+        self.class_identifiers: Dict[str, str] = (
+            {}
+        )  # Dictionary to store class identifiers
         self.span_id_to_previous_span_id: Dict[str, str | None] = {}
         self.trace_id_to_previous_trace: Dict[str, TraceClient | None] = {}
         self.current_span_id: Optional[str] = None
@@ -1708,7 +1541,7 @@ class Tracer:
                 region_name=s3_region_name,
             )
         self.offline_mode: bool = offline_mode
-        self.deep_tracing: bool = deep_tracing  # NEW: Store deep tracing setting
+        self.deep_tracing: bool = deep_tracing
 
         # Initialize background span service
         self.enable_background_spans: bool = enable_background_spans
@@ -2043,7 +1876,7 @@ class Tracer:
                     current_trace = TraceClient(
                         self,
                         trace_id,
-                        span_name,  # MODIFIED: Use span_name directly
+                        span_name,
                         project_name=project,
                         overwrite=overwrite,
                         rules=self.rules,
@@ -2058,9 +1891,7 @@ class Tracer:
                     try:
                         # Use span for the function execution within the root trace
                         # This sets the current_span_var
-                        with current_trace.span(
-                            span_name, span_type=span_type
-                        ) as span:  # MODIFIED: Use span_name directly
+                        with current_trace.span(span_name, span_type=span_type) as span:
                             # Record inputs
                             inputs = combine_args_kwargs(func, args, kwargs)
                             span.record_input(inputs)
@@ -2118,9 +1949,6 @@ class Tracer:
                         # Store the complete trace data instead of just server response
 
                         self.traces.append(complete_trace_data)
-
-                        # if self.background_span_service:
-                        #     self.background_span_service.flush()
 
                         # Reset trace context (span context resets automatically)
                         self.reset_current_trace(trace_token)
@@ -2184,7 +2012,7 @@ class Tracer:
                     current_trace = TraceClient(
                         self,
                         trace_id,
-                        span_name,  # MODIFIED: Use span_name directly
+                        span_name,
                         project_name=project,
                         overwrite=overwrite,
                         rules=self.rules,
@@ -2199,9 +2027,7 @@ class Tracer:
                     try:
                         # Use span for the function execution within the root trace
                         # This sets the current_span_var
-                        with current_trace.span(
-                            span_name, span_type=span_type
-                        ) as span:  # MODIFIED: Use span_name directly
+                        with current_trace.span(span_name, span_type=span_type) as span:
                             # Record inputs
                             inputs = combine_args_kwargs(func, args, kwargs)
                             span.record_input(inputs)
@@ -2306,13 +2132,13 @@ class Tracer:
 
         Args:
             cls: The class to decorate (automatically provided when used as decorator)
-            exclude_methods: List of method names to skip decorating. Defaults to common magic methods
+            exclude_methods: List of method names to skip decorating. Defaults to dunder like methods
             include_private: Whether to decorate methods starting with underscore. Defaults to False
             warn_on_double_decoration: Whether to print warnings when skipping already-decorated methods. Defaults to True
         """
-
+        is_dunder_like = lambda s: s.startswith("__") and s.endswith("__")
         if exclude_methods is None:
-            exclude_methods = ["__init__", "__new__", "__del__", "__str__", "__repr__"]
+            exclude_methods = [name for name in dir(cls) if is_dunder_like(name)]
 
         def decorate_class(cls):
             if not self.enable_monitoring:
@@ -2356,10 +2182,7 @@ class Tracer:
         if not self.enable_evaluations:
             return
 
-        # --- Get trace_id passed explicitly (if any) ---
-        passed_trace_id = kwargs.pop(
-            "trace_id", None
-        )  # Get and remove trace_id from kwargs
+        passed_trace_id = kwargs.pop("trace_id", None)
 
         current_trace = self.get_current_trace()
 
@@ -2367,14 +2190,12 @@ class Tracer:
             # Pass the explicitly provided trace_id if it exists, otherwise let async_evaluate handle it
             # (Note: TraceClient.async_evaluate doesn't currently use an explicit trace_id, but this is for future proofing/consistency)
             if passed_trace_id:
-                kwargs["trace_id"] = (
-                    passed_trace_id  # Re-add if needed by TraceClient.async_evaluate
-                )
+                kwargs["trace_id"] = passed_trace_id
             current_trace.async_evaluate(*args, **kwargs)
         else:
             warnings.warn(
                 "No trace found (context var or fallback), skipping evaluation"
-            )  # Modified warning
+            )
 
     def set_metadata(self, **kwargs):
         """
@@ -2565,7 +2386,6 @@ def wrap(
                 _capture_exception_for_trace(span, sys.exc_info())
                 raise e
 
-    # Function replacing .stream() for async clients
     def traced_stream_async(*args, **kwargs):
         current_trace = _get_current_trace(trace_across_async_contexts)
         if not current_trace or not original_stream:
@@ -2894,58 +2714,6 @@ def combine_args_kwargs(func, args, kwargs):
         return {**{f"arg{i}": arg for i, arg in enumerate(args)}, **kwargs}
 
 
-# NOTE: This builds once, can be tweaked if we are missing / capturing other unncessary modules
-# @link https://docs.python.org/3.13/library/sysconfig.html
-_TRACE_FILEPATH_BLOCKLIST = tuple(
-    os.path.realpath(p) + os.sep
-    for p in {
-        sysconfig.get_paths()["stdlib"],
-        sysconfig.get_paths().get("platstdlib", ""),
-        *site.getsitepackages(),
-        site.getusersitepackages(),
-        *(
-            [os.path.join(os.path.dirname(__file__), "../../judgeval/")]
-            if os.environ.get("JUDGMENT_DEV")
-            else []
-        ),
-    }
-    if p
-)
-
-
-# Add the new TraceThreadPoolExecutor class
-class TraceThreadPoolExecutor(concurrent.futures.ThreadPoolExecutor):
-    """
-    A ThreadPoolExecutor subclass that automatically propagates contextvars
-    from the submitting thread to the worker thread using copy_context().run().
-
-    This ensures that context variables like `current_trace_var` and
-    `current_span_var` are available within functions executed by the pool,
-    allowing the Tracer to maintain correct parent-child relationships across
-    thread boundaries.
-    """
-
-    def submit(self, fn, /, *args, **kwargs):
-        """
-        Submit a callable to be executed with the captured context.
-        """
-        # Capture context from the submitting thread
-        ctx = contextvars.copy_context()
-
-        # We use functools.partial to bind the arguments to the function *now*,
-        # as ctx.run doesn't directly accept *args, **kwargs in the same way
-        # submit does. It expects ctx.run(callable, arg1, arg2...).
-        func_with_bound_args = functools.partial(fn, *args, **kwargs)
-
-        # Submit the ctx.run callable to the original executor.
-        # ctx.run will execute the (now argument-bound) function within the
-        # captured context in the worker thread.
-        return super().submit(ctx.run, func_with_bound_args)
-
-    # Note: The `map` method would also need to be overridden for full context
-    # propagation if users rely on it, but `submit` is the most common use case.
-
-
 # Helper functions for stream processing
 # ---------------------------------------
 
@@ -3037,7 +2805,6 @@ def _extract_usage_from_final_chunk(
     return None
 
 
-# --- Sync Stream Wrapper ---
 def _sync_stream_wrapper(
     original_stream: Iterator,
     client: ApiClient,
@@ -3045,7 +2812,7 @@ def _sync_stream_wrapper(
     trace_across_async_contexts: bool = Tracer.trace_across_async_contexts,
 ) -> Generator[Any, None, None]:
     """Wraps a synchronous stream iterator to capture content and update the trace."""
-    content_parts = []  # Use a list instead of string concatenation
+    content_parts = []
     final_usage = None
     last_chunk = None
     try:
@@ -3078,15 +2845,13 @@ def _sync_stream_wrapper(
         # but Pydantic's model_dump should handle dicts.
 
 
-# --- Async Stream Wrapper ---
 async def _async_stream_wrapper(
     original_stream: AsyncIterator,
     client: ApiClient,
     span: TraceSpan,
     trace_across_async_contexts: bool = Tracer.trace_across_async_contexts,
 ) -> AsyncGenerator[Any, None]:
-    # [Existing logic - unchanged]
-    content_parts = []  # Use a list instead of string concatenation
+    content_parts = []
     final_usage_data = None
     last_content_chunk = None
     anthropic_input_tokens = 0
@@ -3095,7 +2860,6 @@ async def _async_stream_wrapper(
     try:
         model_name = ""
         async for chunk in original_stream:
-            # Check for OpenAI's final usage chunk
             if (
                 isinstance(client, (AsyncOpenAI, OpenAI))
                 and hasattr(chunk, "usage")
@@ -3181,7 +2945,6 @@ async def _async_stream_wrapper(
                 current_trace.background_span_service.queue_span(
                     span, span_state="completed"
                 )
-        # else: # Handle error case if necessary, but remove debug print
 
 
 def cost_per_token(*args, **kwargs):
@@ -3257,7 +3020,6 @@ class _TracedAsyncStreamManagerWrapper(
         self._span_context_token = self._trace_client.set_current_span(span_id)
         span.inputs = _format_input_data(self._client, **self._input_kwargs)
 
-        # Call the original __aenter__ and expect it to be an async generator
         raw_iterator = await self._original_manager.__aenter__()
         span.output = "<pending stream>"
         return self._stream_wrapper_func(

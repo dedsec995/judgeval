@@ -7,9 +7,8 @@ from judgeval.tracer import Tracer
 from unittest.mock import patch
 import time
 
-# Test constants
 TEST_BUCKET_PREFIX = "judgeval-test-"
-TEST_REGION = "us-west-1"  # Change this to your desired region
+TEST_REGION = "us-west-1"
 
 
 @pytest.fixture
@@ -104,9 +103,9 @@ async def test_save_trace_to_s3(judgment, s3_client):
         trace_files = [
             obj for obj in response["Contents"] if "test_s3_trace_saving" in obj["Key"]
         ]
-        assert len(trace_files) > 0, (
-            "Trace file with ID test_s3_trace_saving not found in bucket"
-        )
+        assert (
+            len(trace_files) > 0
+        ), "Trace file with ID test_s3_trace_saving not found in bucket"
 
         # Get the trace file content
         trace_file = trace_files[0]
@@ -167,9 +166,9 @@ async def test_auto_bucket_creation(judgment_no_bucket_yet, s3_client):
         trace_files = [
             obj for obj in response["Contents"] if "test_s3_trace_saving" in obj["Key"]
         ]
-        assert len(trace_files) > 0, (
-            "Trace file with ID test_s3_trace_saving not found in bucket"
-        )
+        assert (
+            len(trace_files) > 0
+        ), "Trace file with ID test_s3_trace_saving not found in bucket"
 
         # Get the trace file content
         trace_file = trace_files[0]
