@@ -64,9 +64,9 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         # - self.traces: List[Dict[str, Any]] = [] # Keep for collecting multiple traces
 
         # Also reset tracking/logging variables
-        self.executed_nodes: List[str] = (
-            []
-        )  # These last four members are only appended to and never accessed; can probably be removed but still might be useful for future reference?
+        self.executed_nodes: List[
+            str
+        ] = []  # These last four members are only appended to and never accessed; can probably be removed but still might be useful for future reference?
         self.executed_tools: List[str] = []
         self.executed_node_tools: List[str] = []
         self.traces: List[Dict[str, Any]] = []

@@ -40,9 +40,7 @@ class APIScorer(str, Enum):
                 return member
 
 
-UNBOUNDED_SCORERS = set(
-    [APIScorer.COMPARISON]
-)
+UNBOUNDED_SCORERS = set([APIScorer.COMPARISON])
 
 ROOT_API = os.getenv("JUDGMENT_API_URL", "https://api.judgmentlabs.ai")
 

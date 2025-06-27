@@ -20,7 +20,6 @@ from contextlib import (
     AbstractAsyncContextManager,
     AbstractContextManager,
 )
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import (
@@ -49,12 +48,9 @@ from anthropic import Anthropic, AsyncAnthropic
 from google import genai
 
 from judgeval.constants import (
-    JUDGMENT_TRACES_ADD_ANNOTATION_API_URL,
     JUDGMENT_TRACES_SAVE_API_URL,
     JUDGMENT_TRACES_UPSERT_API_URL,
     JUDGMENT_TRACES_FETCH_API_URL,
-    JUDGMENT_TRACES_DELETE_API_URL,
-    JUDGMENT_PROJECT_DELETE_API_URL,
     JUDGMENT_TRACES_SPANS_BATCH_API_URL,
     JUDGMENT_TRACES_EVALUATION_RUNS_BATCH_API_URL,
 )
@@ -65,7 +61,6 @@ from judgeval.evaluation_run import EvaluationRun
 from judgeval.common.utils import ExcInfo, validate_api_key
 from judgeval.common.exceptions import JudgmentAPIError
 
-import concurrent.futures
 from collections.abc import Iterator, AsyncIterator
 import queue
 import atexit
@@ -308,7 +303,6 @@ class TraceClient:
         self.trace_spans: List[TraceSpan] = []
         self.span_id_to_span: Dict[str, TraceSpan] = {}
         self.evaluation_runs: List[EvaluationRun] = []
-        self.annotations: List[TraceAnnotation] = []
         self.start_time: Optional[float] = (
             None  # Will be set after first successful save
         )
@@ -506,11 +500,6 @@ class TraceClient:
             span.evaluation_runs.append(eval_run)
             span.has_evaluation = True  # Set the has_evaluation flag
         self.evaluation_runs.append(eval_run)
-
-    def add_annotation(self, annotation: TraceAnnotation):
-        """Add an annotation to this trace context"""
-        self.annotations.append(annotation)
-        return self
 
     def record_input(self, inputs: dict):
         current_span_id = self.get_current_span()
@@ -1264,29 +1253,6 @@ class _DeepTracer:
 
         return our_result or original_result
 
-    def _cooperative_threading_trace(
-        self, frame: types.FrameType, event: str, arg: Any
-    ):
-        """Cooperative trace function for threading.settrace that chains with existing tracers."""
-        # First, call the original threading trace function if it exists
-        original_result = None
-        if self._original_threading_trace:
-            try:
-                original_result = self._original_threading_trace(frame, event, arg)
-            except Exception:
-                # If the original tracer fails, continue with our tracing
-                pass
-
-        # Then do our own tracing
-        our_result = self._trace(frame, event, arg, self._cooperative_threading_trace)
-
-        # Return our tracer to continue tracing, but respect the original's decision
-        # If the original tracer returned None (stop tracing), we should respect that
-        if original_result is None and self._original_threading_trace:
-            return None
-
-        return our_result or original_result
-
     def _trace(
         self, frame: types.FrameType, event: str, arg: Any, continuation_func: Callable
     ):
@@ -1519,9 +1485,9 @@ class Tracer:
         self.traces: List[Trace] = []
         self.enable_monitoring: bool = enable_monitoring
         self.enable_evaluations: bool = enable_evaluations
-        self.class_identifiers: Dict[str, str] = (
-            {}
-        )  # Dictionary to store class identifiers
+        self.class_identifiers: Dict[
+            str, str
+        ] = {}  # Dictionary to store class identifiers
         self.span_id_to_previous_span_id: Dict[str, str | None] = {}
         self.trace_id_to_previous_trace: Dict[str, TraceClient | None] = {}
         self.current_span_id: Optional[str] = None
@@ -1686,18 +1652,6 @@ class Tracer:
             finally:
                 # Reset the context variable
                 self.reset_current_trace(token)
-
-    def log(self, msg: str, label: str = "log", score: int = 1):
-        """Log a message with the current span context"""
-        current_span_id = self.get_current_span()
-        current_trace = self.get_current_trace()
-        if current_span_id and current_trace:
-            annotation = TraceAnnotation(
-                span_id=current_span_id, text=msg, label=label, score=score
-            )
-            current_trace.add_annotation(annotation)
-
-        rprint(f"[bold]{label}:[/bold] {msg}")
 
     def identify(
         self,
@@ -2136,9 +2090,12 @@ class Tracer:
             include_private: Whether to decorate methods starting with underscore. Defaults to False
             warn_on_double_decoration: Whether to print warnings when skipping already-decorated methods. Defaults to True
         """
-        is_dunder_like = lambda s: s.startswith("__") and s.endswith("__")
         if exclude_methods is None:
-            exclude_methods = [name for name in dir(cls) if is_dunder_like(name)]
+            exclude_methods = [
+                name
+                for name in dir(cls)
+                if name.startswith("__") and name.endswith("__")
+            ]
 
         def decorate_class(cls):
             if not self.enable_monitoring:
