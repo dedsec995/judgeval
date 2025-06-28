@@ -188,22 +188,12 @@ def generate_recommendations(state: State) -> State:
     recommendations = response.content
     state["recommendations"] = recommendations
 
-    # --- Prepare and Add Evaluation to State using the new helper ---
-    # add_evaluation_to_state(
-    #     state=state, # Pass the current state dictionary
-    #     scorers=[AnswerRelevancyScorer(threshold=0.5)],
-    #     input=user_prompt,
-    #     actual_output=recommendations,
-    #     model="gpt-4"
-    # )
-
     judgment.async_evaluate(
         input=user_prompt,
         actual_output=recommendations,
         scorers=[AnswerRelevancyScorer(threshold=0.5)],
         model="gpt-4o",
     )
-    # --- End Evaluation Setup ---
 
     return state
 

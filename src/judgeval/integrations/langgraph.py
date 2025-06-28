@@ -36,9 +36,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         self.tracer = tracer
         # Initialize tracking/logging variables (preserved across resets)
         self.executed_nodes: List[str] = []
-        self.executed_tools: List[str] = []
-        self.executed_node_tools: List[str] = []
-        self.traces: List[Dict[str, Any]] = []
         # Initialize execution state (reset between runs)
         self._reset_state()
 
@@ -57,19 +54,8 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         # Add timestamp to track when we last reset
         self._last_reset_time: float = time.time()
 
-        # Preserve tracking/logging variables across executions:
-        # - self.executed_nodes: List[str] = [] # Keep as running log
-        # - self.executed_tools: List[str] = [] # Keep as running log
-        # - self.executed_node_tools: List[str] = [] # Keep as running log
-        # - self.traces: List[Dict[str, Any]] = [] # Keep for collecting multiple traces
-
         # Also reset tracking/logging variables
-        self.executed_nodes: List[
-            str
-        ] = []  # These last four members are only appended to and never accessed; can probably be removed but still might be useful for future reference?
-        self.executed_tools: List[str] = []
-        self.executed_node_tools: List[str] = []
-        self.traces: List[Dict[str, Any]] = []
+        self.executed_nodes: List[str] = []
 
     def reset(self):
         """Public method to manually reset handler execution state for reuse"""
@@ -120,15 +106,14 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
                 self._root_run_id = (
                     run_id  # Assign the first run_id encountered as the tentative root
                 )
-                self._trace_saved = False  # Ensure flag is reset
+                self._trace_saved = False
                 # Set active client on Tracer (important for potential fallbacks)
                 self.tracer._active_trace_client = self._trace_client
 
-                # NEW: Initial save for live tracking (follows the new practice)
                 try:
-                    trace_id_saved, server_response = self._trace_client.save(
+                    self._trace_client.save(
                         overwrite=self._trace_client.overwrite,
-                        final_save=False,  # Initial save for live tracking
+                        final_save=False,
                     )
                 except Exception as e:
                     import warnings
@@ -318,14 +303,12 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
                     self.tracer.traces.append(complete_trace_data)
                     self._trace_saved = True  # Set flag only after successful save
             finally:
-                # --- NEW: Consolidated Cleanup Logic ---
                 # This block executes regardless of save success/failure
                 # Reset root run id
                 self._root_run_id = None
                 # Reset input storage for this handler instance
                 if self.tracer._active_trace_client == self._trace_client:
                     self.tracer._active_trace_client = None
-                # --- End Cleanup Logic ---
 
     # --- Callback Methods ---
     # Each method now ensures the trace client exists before proceeding
@@ -418,35 +401,23 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
             serialized.get("name") if serialized else "Unknown (Serialized=None)"
         )
 
-        # --- Determine Name and Span Type ---
         span_type: SpanType = "chain"
-        name = serialized_name if serialized_name else "Unknown Chain"  # Default name
+        name = serialized_name if serialized_name else "Unknown Chain"
         node_name = metadata.get("langgraph_node") if metadata else None
-        is_langgraph_root_kwarg = (
-            kwargs.get("name") == "LangGraph"
-        )  # Check kwargs for explicit root name
-        # More robust root detection: Often the first chain event with parent_run_id=None *is* the root.
+        is_langgraph_root_kwarg = kwargs.get("name") == "LangGraph"
         is_potential_root_event = parent_run_id is None
 
         if node_name:
-            name = node_name  # Use node name if available
+            name = node_name
             if name not in self.executed_nodes:
-                self.executed_nodes.append(
-                    name
-                )  # Leaving this in for now but can probably be removed
+                self.executed_nodes.append(name)
         elif is_langgraph_root_kwarg and is_potential_root_event:
-            name = "LangGraph"  # Explicit root detected
-        # Add handling for other potential LangChain internal chains if needed, e.g., "RunnableSequence"
+            name = "LangGraph"
 
-        # --- Ensure Trace Client ---
-        # Pass parent_run_id to _ensure_trace_client
-        trace_client = self._ensure_trace_client(
-            run_id, parent_run_id, name
-        )  # Corrected call
+        trace_client = self._ensure_trace_client(run_id, parent_run_id, name)
         if not trace_client:
             return
 
-        # --- Update Trace Name if Root ---
         # If this is the root event (parent_run_id is None) and the trace client was just created,
         # ensure the trace name reflects the graph's name ('LangGraph' usually).
         if (
@@ -454,9 +425,8 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
             and run_id == self._root_run_id
             and trace_client.name != name
         ):
-            trace_client.name = name  # Update trace name to the determined root name
+            trace_client.name = name
 
-        # --- Start Span Tracking ---
         combined_inputs = {
             "inputs": inputs,
             "tags": tags,
@@ -482,10 +452,7 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Any:
-        # Pass parent_run_id
-        trace_client = self._ensure_trace_client(
-            run_id, parent_run_id, "ChainEnd"
-        )  # Corrected call
+        trace_client = self._ensure_trace_client(run_id, parent_run_id, "ChainEnd")
         if not trace_client:
             return
 
@@ -500,7 +467,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         # Call end_span_tracking with potentially determined span_type
         self._end_span_tracking(trace_client, run_id, outputs=combined_outputs)
 
-        # --- Root node cleanup (Existing logic - slightly modified save call) ---
         if run_id == self._root_run_id:
             if trace_client and not self._trace_saved:
                 # Store complete trace data instead of server response
@@ -599,23 +565,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
             inputs=combined_inputs,
         )
 
-        # --- Track executed tools (remains the same) ---
-        if name not in self.executed_tools:
-            self.executed_tools.append(
-                name
-            )  # Leaving this in for now but can probably be removed
-        parent_node_name = None
-        if parent_run_id and parent_run_id in self._run_id_to_span_id:
-            parent_span_id = self._run_id_to_span_id[parent_run_id]
-            parent_node_name = trace_client.span_id_to_span[parent_span_id].function
-
-        node_tool = f"{parent_node_name}:{name}" if parent_node_name else name
-        if node_tool not in self.executed_node_tools:
-            self.executed_node_tools.append(
-                node_tool
-            )  # Leaving this in for now but can probably be removed
-        # --- End Track executed tools ---
-
     def on_tool_end(
         self,
         output: Any,
@@ -695,15 +644,11 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        # Pass parent_run_id
-        trace_client = self._ensure_trace_client(
-            run_id, parent_run_id, "LLMEnd"
-        )  # Corrected call
+        trace_client = self._ensure_trace_client(run_id, parent_run_id, "LLMEnd")
         if not trace_client:
             return
         outputs = {"response": response, "kwargs": kwargs}
 
-        # --- Token Usage Extraction and Cost Calculation ---
         prompt_tokens = None
         completion_tokens = None
         total_tokens = None
@@ -752,7 +697,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
                     if prompt_tokens is not None and completion_tokens is not None:
                         total_tokens = prompt_tokens + completion_tokens
 
-            # --- Create TraceUsage object and set on span ---
             if prompt_tokens is not None or completion_tokens is not None:
                 # Calculate costs if model name is available
                 prompt_cost = None
@@ -783,7 +727,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
                             f"Failed to calculate token costs for model {model_name}: {e}"
                         )
 
-                # Create TraceUsage object
                 usage = TraceUsage(
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
@@ -806,7 +749,6 @@ class JudgevalCallbackHandler(BaseCallbackHandler):
                     trace_span.usage = usage
 
         self._end_span_tracking(trace_client, run_id, outputs=outputs)
-        # --- End Token Usage ---
 
     def on_llm_error(
         self,
