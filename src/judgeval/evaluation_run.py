@@ -27,7 +27,6 @@ class EvaluationRun(BaseModel):
     scorers: List[Union[APIJudgmentScorer, JudgevalScorer]]
     model: Optional[str] = "gpt-4.1"
     trace_span_id: Optional[str] = None
-    # API Key will be "" until user calls client.run_eval(), then API Key will be set
     judgment_api_key: Optional[str] = ""
     override: Optional[bool] = False
     append: Optional[bool] = False
@@ -79,7 +78,6 @@ class EvaluationRun(BaseModel):
         if not v:
             raise ValueError("Model cannot be empty.")
 
-        # Check if model is string or list of strings
         if isinstance(v, str):
             if v not in ACCEPTABLE_MODELS:
                 raise ValueError(

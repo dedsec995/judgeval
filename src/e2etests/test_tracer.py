@@ -12,7 +12,8 @@ from together import AsyncTogether
 from google import genai
 
 # Local imports
-from judgeval.tracer import Tracer, wrap, TraceManagerClient
+from judgeval.common.tracer import TraceManagerClient
+from judgeval.tracer import Tracer, wrap
 from judgeval.scorers import FaithfulnessScorer, AnswerRelevancyScorer
 from judgeval.data import Example
 

@@ -8,7 +8,8 @@ from langgraph.graph import StateGraph
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 
-from judgeval.common.tracer import Tracer, TraceManagerClient, TraceClient
+from judgeval.common.tracer import Tracer, TraceClient
+from judgeval.common.tracer import TraceManagerClient
 from judgeval.integrations.langgraph import JudgevalCallbackHandler
 
 # --- Test Configuration ---

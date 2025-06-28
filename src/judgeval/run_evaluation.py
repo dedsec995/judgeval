@@ -80,7 +80,6 @@ def execute_api_eval(evaluation_run: EvaluationRun) -> Dict:
             "An error occurred while executing the Judgment API request: " + details
         )
     # Check if the response status code is not 2XX
-    # Add check for the duplicate eval run name
     if not response.ok:
         error_message = response_data.get("detail", "An unknown error occurred.")
         error(f"Error: {error_message=}")
@@ -1096,15 +1095,6 @@ def run_eval(
 
         info(f"Successfully merged {len(merged_results)} results")
 
-        # Evaluate rules against local scoring results if rules exist (this cant be done just yet)
-        # if evaluation_run.rules and merged_results:
-        #     run_rules(
-        #         local_results=merged_results,
-        #         rules=evaluation_run.rules,
-        #         judgment_api_key=evaluation_run.judgment_api_key,
-        #         organization_id=evaluation_run.organization_id
-        #     )
-        # print(merged_results)
         send_results = [
             scoring_result.model_dump(warnings=False)
             for scoring_result in merged_results
