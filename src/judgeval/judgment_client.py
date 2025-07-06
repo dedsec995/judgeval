@@ -18,12 +18,17 @@ from judgeval.data import (
     Trace,
 )
 from judgeval.scorers import (
-    APIJudgmentScorer,
-    JudgevalScorer,
+    APIScorerConfig,
+    BaseScorer,
     ClassifierScorer,
 )
 from judgeval.evaluation_run import EvaluationRun
-from judgeval.run_evaluation import run_eval, assert_test, run_trace_eval
+from judgeval.run_evaluation import (
+    run_eval,
+    assert_test,
+    run_trace_eval,
+    safe_run_async,
+)
 from judgeval.data.trace_run import TraceRun
 from judgeval.constants import (
     JUDGMENT_EVAL_FETCH_API_URL,
@@ -88,7 +93,7 @@ class JudgmentClient(metaclass=SingletonMeta):
     def a_run_evaluation(
         self,
         examples: List[Example],
-        scorers: List[Union[APIJudgmentScorer, JudgevalScorer]],
+        scorers: List[Union[APIScorerConfig, BaseScorer]],
         model: Optional[str] = "gpt-4.1",
         project_name: str = "default_project",
         eval_run_name: str = "default_eval_run",
@@ -110,7 +115,7 @@ class JudgmentClient(metaclass=SingletonMeta):
 
     def run_trace_evaluation(
         self,
-        scorers: List[Union[APIJudgmentScorer, JudgevalScorer]],
+        scorers: List[Union[APIScorerConfig, BaseScorer]],
         examples: Optional[List[Example]] = None,
         function: Optional[Callable] = None,
         tracer: Optional[Union[Tracer, BaseCallbackHandler]] = None,
@@ -154,7 +159,7 @@ class JudgmentClient(metaclass=SingletonMeta):
     def run_evaluation(
         self,
         examples: Union[List[Example], List[CustomExample]],
-        scorers: List[Union[APIJudgmentScorer, JudgevalScorer]],
+        scorers: List[Union[APIScorerConfig, BaseScorer]],
         model: Optional[str] = "gpt-4.1",
         project_name: str = "default_project",
         eval_run_name: str = "default_eval_run",
@@ -167,7 +172,7 @@ class JudgmentClient(metaclass=SingletonMeta):
 
         Args:
             examples (Union[List[Example], List[CustomExample]]): The examples to evaluate
-            scorers (List[Union[APIJudgmentScorer, JudgevalScorer]]): A list of scorers to use for evaluation
+            scorers (List[Union[APIScorerConfig, BaseScorer]]): A list of scorers to use for evaluation
             model (str): The model used as a judge when using LLM as a Judge
             project_name (str): The name of the project the evaluation results belong to
             eval_run_name (str): A name for this evaluation run
@@ -418,7 +423,7 @@ class JudgmentClient(metaclass=SingletonMeta):
     def assert_test(
         self,
         examples: List[Example],
-        scorers: List[Union[APIJudgmentScorer, JudgevalScorer]],
+        scorers: List[Union[APIScorerConfig, BaseScorer]],
         model: Optional[str] = "gpt-4.1",
         project_name: str = "default_test",
         eval_run_name: str = str(uuid4()),
@@ -431,7 +436,7 @@ class JudgmentClient(metaclass=SingletonMeta):
 
         Args:
             examples (List[Example]): The examples to evaluate.
-            scorers (List[Union[APIJudgmentScorer, JudgevalScorer]]): A list of scorers to use for evaluation
+            scorers (List[Union[APIScorerConfig, BaseScorer]]): A list of scorers to use for evaluation
             model (str): The model used as a judge when using LLM as a Judge
             project_name (str): The name of the project the evaluation results belong to
             eval_run_name (str): A name for this evaluation run
@@ -458,7 +463,7 @@ class JudgmentClient(metaclass=SingletonMeta):
             async def run_async():  # Using wrapper here to resolve mypy error with passing Task into asyncio.run
                 return await results
 
-            actual_results = asyncio.run(run_async())
+            actual_results = safe_run_async(run_async())
             assert_test(actual_results)  # Call the synchronous imported function
         else:
             # 'results' is already List[ScoringResult] here (synchronous path)
@@ -466,7 +471,7 @@ class JudgmentClient(metaclass=SingletonMeta):
 
     def assert_trace_test(
         self,
-        scorers: List[Union[APIJudgmentScorer, JudgevalScorer]],
+        scorers: List[Union[APIScorerConfig, BaseScorer]],
         examples: Optional[List[Example]] = None,
         function: Optional[Callable] = None,
         tracer: Optional[Union[Tracer, BaseCallbackHandler]] = None,
@@ -484,7 +489,7 @@ class JudgmentClient(metaclass=SingletonMeta):
 
         Args:
             examples (List[Example]): The examples to evaluate.
-            scorers (List[Union[APIJudgmentScorer, JudgevalScorer]]): A list of scorers to use for evaluation
+            scorers (List[Union[APIScorerConfig, BaseScorer]]): A list of scorers to use for evaluation
             model (str): The model used as a judge when using LLM as a Judge
             project_name (str): The name of the project the evaluation results belong to
             eval_run_name (str): A name for this evaluation run
@@ -526,7 +531,7 @@ class JudgmentClient(metaclass=SingletonMeta):
             async def run_async():  # Using wrapper here to resolve mypy error with passing Task into asyncio.run
                 return await results
 
-            actual_results = asyncio.run(run_async())
+            actual_results = safe_run_async(run_async())
             assert_test(actual_results)  # Call the synchronous imported function
         else:
             # 'results' is already List[ScoringResult] here (synchronous path)

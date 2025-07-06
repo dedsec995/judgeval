@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from judgeval.evaluation_run import EvaluationRun
 from judgeval.data.tool import Tool
@@ -31,7 +31,7 @@ class TraceSpan(BaseModel):
     usage: Optional[TraceUsage] = None
     duration: Optional[float] = None
     annotation: Optional[List[Dict[str, Any]]] = None
-    evaluation_runs: Optional[List[EvaluationRun]] = []
+    evaluation_runs: List[EvaluationRun] = Field(default_factory=list)
     expected_tools: Optional[List[Tool]] = None
     additional_metadata: Optional[Dict[str, Any]] = None
     has_evaluation: Optional[bool] = False
@@ -50,9 +50,11 @@ class TraceSpan(BaseModel):
             "inputs": self._serialize_value(self.inputs),
             "output": self._serialize_value(self.output),
             "error": self._serialize_value(self.error),
-            "evaluation_runs": [run.model_dump() for run in self.evaluation_runs]
-            if self.evaluation_runs
-            else [],
+            "evaluation_runs": (
+                [run.model_dump() for run in self.evaluation_runs]
+                if self.evaluation_runs
+                else []
+            ),
             "parent_span_id": self.parent_span_id,
             "function": self.function,
             "duration": self.duration,
@@ -148,7 +150,7 @@ class Trace(BaseModel):
     trace_spans: List[TraceSpan]
     overwrite: bool = False
     offline_mode: bool = False
-    rules: Optional[Dict[str, Any]] = None
+    rules: Dict[str, Any] = Field(default_factory=dict)
     has_notification: Optional[bool] = False
     customer_id: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: List[str] = Field(default_factory=list)

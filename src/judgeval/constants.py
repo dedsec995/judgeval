@@ -7,7 +7,7 @@ import litellm
 import os
 
 
-class APIScorer(str, Enum):
+class APIScorerType(str, Enum):
     """
     Collection of proprietary scorers implemented by Judgment.
 
@@ -15,35 +15,32 @@ class APIScorer(str, Enum):
     Examples via the Judgment API.
     """
 
-    FAITHFULNESS = "faithfulness"
-    ANSWER_RELEVANCY = "answer_relevancy"
-    ANSWER_CORRECTNESS = "answer_correctness"
-    HALLUCINATION = "hallucination"
-    SUMMARIZATION = "summarization"
-    CONTEXTUAL_RECALL = "contextual_recall"
-    CONTEXTUAL_RELEVANCY = "contextual_relevancy"
-    CONTEXTUAL_PRECISION = "contextual_precision"
-    INSTRUCTION_ADHERENCE = "instruction_adherence"
-    EXECUTION_ORDER = "execution_order"
-    JSON_CORRECTNESS = "json_correctness"
-    COMPARISON = "comparison"
-    GROUNDEDNESS = "groundedness"
-    DERAILMENT = "derailment"
-    TOOL_ORDER = "tool_order"
-    CLASSIFIER = "classifier"
-    TOOL_DEPENDENCY = "tool_dependency"
+    PROMPT_SCORER = "Prompt Scorer"
+    FAITHFULNESS = "Faithfulness"
+    ANSWER_RELEVANCY = "Answer Relevancy"
+    ANSWER_CORRECTNESS = "Answer Correctness"
+    INSTRUCTION_ADHERENCE = "Instruction Adherence"
+    EXECUTION_ORDER = "Execution Order"
+    DERAILMENT = "Derailment"
+    TOOL_ORDER = "Tool Order"
+    CLASSIFIER = "Classifier"
+    TOOL_DEPENDENCY = "Tool Dependency"
+    CUSTOM = "Custom"
 
     @classmethod
     def _missing_(cls, value):
+        # Handle case-insensitive lookup
         for member in cls:
             if member.value == value.lower():
                 return member
 
 
-UNBOUNDED_SCORERS = set([APIScorer.COMPARISON])
+UNBOUNDED_SCORERS: set[APIScorerType] = (
+    set()
+)  # scorers whose scores are not bounded between 0-1
 
 ROOT_API = os.getenv("JUDGMENT_API_URL", "https://api.judgmentlabs.ai")
-
+# API URLs
 JUDGMENT_EVAL_API_URL = f"{ROOT_API}/evaluate/"
 JUDGMENT_TRACE_EVAL_API_URL = f"{ROOT_API}/evaluate_trace/"
 JUDGMENT_DATASETS_PUSH_API_URL = f"{ROOT_API}/datasets/push/"
@@ -147,4 +144,4 @@ ACCEPTABLE_MODELS = (
 MAX_WORKER_THREADS = 10
 
 # Maximum number of concurrent operations for evaluation runs
-MAX_CONCURRENT_EVALUATIONS = 50
+MAX_CONCURRENT_EVALUATIONS = 50  # Adjust based on system capabilities
