@@ -2758,12 +2758,12 @@ def _format_response_output_data(client: ApiClient, response: Any) -> tuple:
     completion_tokens = 0
     model_name = None
     if isinstance(client, (OpenAI, Together, AsyncOpenAI, AsyncTogether)):
-        model_name = f"groq/{response.model}"
+        model_name = response.model
         prompt_tokens = response.usage.input_tokens
         completion_tokens = response.usage.output_tokens
         message_content = response.output
     elif isinstance(client, (Groq, AsyncGroq)):
-        model_name = response.model
+        model_name = f"groq/{response.model}"
         prompt_tokens = response.usage.input_tokens
         completion_tokens = response.usage.output_tokens
         message_content = response.output
